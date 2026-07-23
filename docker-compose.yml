@@ -1,0 +1,68 @@
+# Karivex — chemical division
+# Lessons from your alias-collision debugging baked in:
+#  - dedicated project network (karivex_net), NOT a shared external network
+#  - explicit unique container_name for every service
+#  - nginx upstream + inter-service URLs use container names, never generic
+#    aliases like `backend`/`frontend`
+# Deploy: docker compose build && docker compose up -d --force-recreate
+# (two steps, never `up --build` during a crash-loop)
+name: karivex
+
+services:
+  karivex_db:
+    image: postgres:16-alpine
+    container_name: karivex_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-karivex}
+      POSTGRES_USER: ${POSTGRES_USER:-karivex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+    volumes:
+      - karivex_pgdata:/var/lib/postgresql/data
+    networks: [karivex_net]
+
+  karivex_backend:
+    build: ./backend
+    container_name: karivex_backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: karivex_db
+      FRONTEND_INTERNAL_URL: http://karivex_frontend:3000
+    depends_on: [karivex_db]
+    volumes:
+      - karivex_media:/app/media
+    networks: [karivex_net]
+
+  karivex_frontend:
+    build: ./frontend
+    container_name: karivex_frontend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      INTERNAL_API_URL: http://karivex_backend:8000
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set in .env}
+    depends_on: [karivex_backend]
+    networks: [karivex_net]
+
+  karivex_nginx:
+    image: nginx:alpine
+    container_name: karivex_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/karivex.conf:/etc/nginx/conf.d/default.conf:ro
+      - karivex_media:/media:ro
+      # - certbot volumes here once TLS is issued
+    depends_on: [karivex_frontend, karivex_backend]
+    networks: [karivex_net]
+
+networks:
+  karivex_net:
+    name: karivex_net
+
+volumes:
+  karivex_pgdata:
+  karivex_media:

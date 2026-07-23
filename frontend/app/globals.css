@@ -1,0 +1,83 @@
+/* Karivex — minimal, fast, no framework. Design pass comes in milestone 2. */
+:root {
+  --ink: #14212b;        /* deep slate — industrial, trustworthy */
+  --paper: #ffffff;
+  --mist: #eef2f5;       /* spec-table zebra */
+  --safety: #f5a300;     /* hazard-label amber, used ONLY for CTAs */
+  --safety-ink: #1a1a1a;
+  --rule: #cdd6dd;
+  --max: 72rem;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.6;
+}
+main { max-width: var(--max); margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+.site-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem; border-bottom: 3px solid var(--ink);
+  max-width: var(--max); margin: 0 auto;
+}
+.brand { font-weight: 800; letter-spacing: .08em; text-decoration: none; color: var(--ink); font-size: 1.3rem; }
+.brand span { display: block; font-size: .65rem; font-weight: 500; letter-spacing: .3em; text-transform: uppercase; color: #5a6b78; }
+.site-header nav a { margin-left: 1.25rem; color: var(--ink); text-decoration: none; font-weight: 600; }
+.site-header nav a:hover, .site-header nav a:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
+.hero { padding: 3rem 0 2rem; max-width: 44rem; }
+.hero h1 { font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15; margin: 0 0 1rem; }
+.cta {
+  display: inline-block; background: var(--safety); color: var(--safety-ink);
+  font-weight: 700; padding: .8rem 1.6rem; text-decoration: none;
+  border: 2px solid var(--safety-ink);
+}
+.cta:hover, .cta:focus-visible { background: var(--safety-ink); color: var(--safety); }
+.product-grid { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.product-grid a { display: block; border: 1px solid var(--rule); padding: 1rem; text-decoration: none; color: inherit; height: 100%; }
+.product-grid a:hover, .product-grid a:focus-visible { border-color: var(--ink); }
+.product-grid h2, .product-grid h3 { margin: 0 0 .3rem; font-size: 1.05rem; }
+table { border-collapse: collapse; width: 100%; max-width: 40rem; }
+th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--rule); }
+tbody tr:nth-child(odd) { background: var(--mist); }
+th[scope="row"] { width: 11rem; font-weight: 600; }
+.crumbs { font-size: .85rem; margin-bottom: 1rem; }
+.crumbs a { color: inherit; }
+.lede { color: #43535f; max-width: 44rem; }
+.quote-form { display: grid; gap: .75rem; max-width: 28rem; }
+.quote-form label { display: grid; gap: .25rem; font-weight: 600; font-size: .9rem; }
+.quote-form input, .quote-form select, .quote-form textarea {
+  font: inherit; padding: .55rem; border: 1px solid var(--rule);
+}
+.quote-form input:focus-visible, .quote-form select:focus-visible, .quote-form textarea:focus-visible {
+  outline: 2px solid var(--safety); outline-offset: 1px;
+}
+.quote-form button { background: var(--safety); border: 2px solid var(--safety-ink); font: inherit; font-weight: 700; padding: .8rem; cursor: pointer; }
+.order-panel { border-top: 3px solid var(--ink); margin-top: 2.5rem; padding-top: 1.5rem; }
+.site-footer { border-top: 1px solid var(--rule); max-width: var(--max); margin: 0 auto; padding: 1.5rem 1rem; font-size: .85rem; color: #5a6b78; }
+.site-footer a { color: inherit; }
+details { border: 1px solid var(--rule); padding: .6rem .9rem; margin-bottom: .5rem; }
+summary { font-weight: 600; cursor: pointer; }
+
+.trust-strip { background: var(--ink); color: var(--paper); margin: 0 0 2rem; }
+.trust-strip ul {
+  list-style: none; margin: 0; padding: 1.25rem 1rem; max-width: var(--max); margin-inline: auto;
+  display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.trust-strip li { display: flex; flex-direction: column; gap: .15rem; }
+.trust-strip strong { font-size: 1rem; }
+.trust-strip span { font-size: .85rem; color: #b9c4cc; }
+
+.pagination { display: flex; justify-content: space-between; margin-top: 2rem; font-weight: 600; }
+.pagination a { color: inherit; }
+
+.blog-post .markdown-body { max-width: 44rem; line-height: 1.7; }
+.blog-post .markdown-body h2 { margin-top: 2rem; }
+.blog-post .markdown-body p { margin: 0 0 1rem; }
+.blog-post .markdown-body ul, .blog-post .markdown-body ol { padding-left: 1.4rem; }
+.related-products { margin-top: 2.5rem; border-top: 3px solid var(--ink); padding-top: 1.5rem; }
+
+.quote-page h1 { margin-bottom: .5rem; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
