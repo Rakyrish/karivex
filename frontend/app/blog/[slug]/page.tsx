@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       modifiedTime: post.updated_at,
       images: post.cover_image
         ? [{ url: post.cover_image, alt: post.cover_image_alt }]
-        : [{ url: `${SITE_URL}/og?title=${encodeURIComponent(post.title)}`, width: 1200, height: 630 }],
+        : [{ url: `${SITE_URL}/og?type=guide&title=${encodeURIComponent(post.title)}`, width: 1200, height: 630 }],
     },
   };
 }

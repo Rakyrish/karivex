@@ -73,6 +73,12 @@ class Product(models.Model):
     image = models.ImageField(upload_to="products/", blank=True, null=True)
     image_alt = models.CharField(max_length=160, blank=True)
 
+    # AI-assisted drafting (see ai_tools app). Always a suggestion for staff to
+    # review and copy into the fields above — never written to the live fields
+    # automatically. Keeps the "unique, human-reviewed" guarantee above intact.
+    ai_draft = models.JSONField(default=dict, blank=True)
+    ai_draft_generated_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

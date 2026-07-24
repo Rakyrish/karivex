@@ -8,6 +8,12 @@ export const metadata: Metadata = {
   title: `Buyer's Guides & Industry Insights | ${site.shortName}`,
   description: `Long-form guides on sourcing, handling and pricing industrial, food-grade and lab chemicals across ${site.regions.join(", ")}.`,
   alternates: { canonical: `${SITE_URL}/blog` },
+  openGraph: {
+    title: `Buyer's Guides & Industry Insights | ${site.shortName}`,
+    type: "website",
+    url: `${SITE_URL}/blog`,
+    images: [{ url: `${SITE_URL}/og?type=guide&title=${encodeURIComponent("Buyer's Guides & Industry Insights")}`, width: 1200, height: 630 }],
+  },
 };
 
 type Props = { searchParams: Promise<{ page?: string }> };

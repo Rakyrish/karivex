@@ -4,7 +4,7 @@ import { useState } from "react";
 type Props = {
   productId?: number;
   productName?: string;
-  mode?: "quote" | "buy";
+  mode?: "quote" | "buy" | "contact";
 };
 
 export default function QuoteForm({ productId, productName, mode = "quote" }: Props) {
@@ -25,14 +25,17 @@ export default function QuoteForm({ productId, productName, mode = "quote" }: Pr
   if (status === "sent") {
     return (
       <p role="status">
-        {mode === "buy" ? "Order request" : "Quote request"} received. We reply within one business hour (Mon–Sat, EAT).
+        {mode === "buy" ? "Order request" : mode === "contact" ? "Message" : "Quote request"} received. We
+        reply within one business hour (Mon–Sat, EAT).
       </p>
     );
   }
 
   const label = productName
     ? `${mode === "buy" ? "Order" : "Request a quote for"} ${productName}`
-    : "Request a quote";
+    : mode === "contact"
+      ? "Contact us"
+      : "Request a quote";
 
   return (
     <form onSubmit={submit} className="quote-form" aria-label={label}>
@@ -40,7 +43,14 @@ export default function QuoteForm({ productId, productName, mode = "quote" }: Pr
       <label>Company<input name="company" /></label>
       <label>Email<input name="email" type="email" required /></label>
       <label>Phone / WhatsApp<input name="phone" required placeholder="+2547..." /></label>
-      <label>Quantity<input name="quantity" required placeholder="e.g. 10 × 25 kg bags" /></label>
+      <label>
+        {mode === "contact" ? "What do you need?" : "Quantity"}
+        <input
+          name="quantity"
+          required
+          placeholder={mode === "contact" ? "e.g. Delivery timelines to Kigali, or 10 × 25 kg bags" : "e.g. 10 × 25 kg bags"}
+        />
+      </label>
       <label>Country
         <select name="country" defaultValue="Kenya">
           <option>Kenya</option><option>Uganda</option><option>Tanzania</option>
@@ -49,7 +59,13 @@ export default function QuoteForm({ productId, productName, mode = "quote" }: Pr
       </label>
       <label>Message<textarea name="message" rows={3} /></label>
       <button disabled={status === "sending"}>
-        {status === "sending" ? "Sending…" : mode === "buy" ? "Send order request" : "Request bulk quote"}
+        {status === "sending"
+          ? "Sending…"
+          : mode === "buy"
+            ? "Send order request"
+            : mode === "contact"
+              ? "Send message"
+              : "Request bulk quote"}
       </button>
       {status === "error" && <p role="alert">Something went wrong — call or WhatsApp us instead.</p>}
     </form>

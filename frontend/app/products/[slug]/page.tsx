@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${SITE_URL}/products/${slug}`,
       images: product.image
         ? [{ url: product.image, alt: product.image_alt }]
-        : [{ url: `${SITE_URL}/og?title=${encodeURIComponent(product.name)}`, width: 1200, height: 630 }],
+        : [{ url: `${SITE_URL}/og?type=product&title=${encodeURIComponent(product.name)}`, width: 1200, height: 630 }],
     },
   };
 }

@@ -14,10 +14,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const cat = await getCategory(slug);
   if (!cat) return {};
+  const url = `${SITE_URL}/categories/${slug}`;
   return {
     title: cat.meta_title,
     description: cat.meta_description || cat.description?.slice(0, 160),
-    alternates: { canonical: `${SITE_URL}/categories/${slug}` },
+    alternates: { canonical: url },
+    openGraph: {
+      title: cat.meta_title,
+      type: "website",
+      url,
+      images: [{ url: `${SITE_URL}/og?type=category&title=${encodeURIComponent(cat.name)}`, width: 1200, height: 630 }],
+    },
   };
 }
 
@@ -25,7 +32,12 @@ export default async function CategoryPage({ params }: Props) {
   const { slug } = await params;
   const cat = await getCategory(slug);
   if (!cat) notFound();
-  const products = await getProductsByCategory(slug);
+  const [products, categories] = await Promise.all([
+    getProductsByCategory(slug),
+    getCategories(),
+  ]);
+  const otherCategories = categories.filter((c) => c.slug !== slug);
+  const url = `${SITE_URL}/categories/${slug}`;
 
   const itemList = {
     "@context": "https://schema.org",
@@ -37,9 +49,24 @@ export default async function CategoryPage({ params }: Props) {
     })),
   };
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: cat.name, item: url },
+    ],
+  };
+
   return (
     <section>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemList) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+
+      <nav aria-label="Breadcrumb" className="crumbs">
+        <Link href="/">Home</Link> / <span aria-current="page">{cat.name}</span>
+      </nav>
+
       <h1>{cat.name} — Suppliers in Kenya &amp; East Africa</h1>
       {cat.description && <p className="lede">{cat.description}</p>}
       <ul className="product-grid">
@@ -53,6 +80,19 @@ export default async function CategoryPage({ params }: Props) {
           </li>
         ))}
       </ul>
+
+      {otherCategories.length > 0 && (
+        <section aria-labelledby="other-categories" className="related-products">
+          <h2 id="other-categories">Explore other categories</h2>
+          <div className="category-nav-inner category-nav-inline">
+            {otherCategories.map((c) => (
+              <Link key={c.slug} href={`/categories/${c.slug}`} className="category-chip">
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </section>
   );
 }

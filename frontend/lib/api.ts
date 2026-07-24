@@ -107,6 +107,33 @@ export async function getLatestBlogPosts(limit: number): Promise<BlogPostListIte
   return data.slice(0, limit);
 }
 
+export interface ProductPage {
+  results: ProductListItem[];
+  count: number;
+  page: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+const PRODUCT_PAGE_SIZE = 16; // 4 rows of 4 on desktop, 8 rows of 2 on mobile
+
+export async function getProductsPage(page: number): Promise<ProductPage> {
+  try {
+    const data: any = await get(`/products/?page=${page}&page_size=${PRODUCT_PAGE_SIZE}`);
+    return {
+      results: data.results ?? [],
+      count: data.count ?? 0,
+      page,
+      pageSize: PRODUCT_PAGE_SIZE,
+      hasNext: Boolean(data.next),
+      hasPrevious: Boolean(data.previous),
+    };
+  } catch {
+    return { results: [], count: 0, page, pageSize: PRODUCT_PAGE_SIZE, hasNext: false, hasPrevious: false };
+  }
+}
+
 export interface BlogPage {
   results: BlogPostListItem[];
   count: number;
