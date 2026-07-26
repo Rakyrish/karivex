@@ -6,6 +6,7 @@ from catalog.models import Product
 class ProductDraftRequestSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     image_url = serializers.URLField(required=False, allow_blank=True)
+    source_url = serializers.URLField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True, max_length=2000)
 
 

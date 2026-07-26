@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "catalog",
     "ai_tools",
+    "dashboard",
 ]
 
 MIDDLEWARE = [
@@ -79,7 +80,21 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "catalog.pagination.StandardPagination",
     "PAGE_SIZE": 50,
+    # Session/Basic unchanged for Django admin & browsable API; SignedTokenAuthentication
+    # is additive — it doesn't touch any view's permission_classes, so every existing
+    # AllowAny catalog endpoint is unaffected. It also makes ai_tools' existing
+    # IsAdminUser views (draft-product, internal-links) work with the admin
+    # control center's bearer token for free.
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+        "dashboard.authentication.SignedTokenAuthentication",
+    ],
 }
+
+# Admin control-center session length (hours) — bearer tokens are signed via
+# Django's TimestampSigner using DJANGO_SECRET_KEY; no separate secret needed.
+DASHBOARD_SESSION_HOURS = int(os.environ.get("DASHBOARD_SESSION_HOURS", "12"))
 
 # Frontend revalidation webhook (container-name URL, not shared alias — see compose)
 FRONTEND_INTERNAL_URL = os.environ.get("FRONTEND_INTERNAL_URL", "http://karivex_frontend:3000")

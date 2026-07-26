@@ -46,20 +46,24 @@ export default async function ProductPage({ params }: Props) {
 
   // --- Structured data. This is the moat: none of the four competitors emit
   // Product, FAQPage, or BreadcrumbList schema. Rich results = higher CTR.
+  // Each PropertyValue is independent — a product missing a CAS number (e.g.
+  // a blend/mixture) must not also lose its purity/grade/packaging schema,
+  // which an earlier version of this file did by nesting all four behind a
+  // single `cas_number &&` gate.
+  const additionalProperty = [
+    product.cas_number && { "@type": "PropertyValue", name: "CAS Number", value: product.cas_number },
+    product.purity && { "@type": "PropertyValue", name: "Purity", value: product.purity },
+    product.grade && { "@type": "PropertyValue", name: "Grade", value: product.grade },
+    product.packaging && { "@type": "PropertyValue", name: "Packaging", value: product.packaging },
+  ].filter(Boolean);
+
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.meta_description || product.description.slice(0, 300),
     sku: product.slug,
-    ...(product.cas_number && {
-      additionalProperty: [
-        { "@type": "PropertyValue", name: "CAS Number", value: product.cas_number },
-        { "@type": "PropertyValue", name: "Purity", value: product.purity },
-        { "@type": "PropertyValue", name: "Grade", value: product.grade },
-        { "@type": "PropertyValue", name: "Packaging", value: product.packaging },
-      ],
-    }),
+    ...(additionalProperty.length > 0 && { additionalProperty }),
     ...(product.image && { image: product.image }),
     brand: { "@type": "Brand", name: "Karivex Solutions Ltd" },
     offers: {
