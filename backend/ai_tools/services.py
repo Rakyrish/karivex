@@ -50,29 +50,45 @@ def _image_data_uri(product, image_url_override: str | None):
 
 
 DRAFT_SCHEMA_HINT = (
-    '{"description": "250+ words, unique prose, 2-4 paragraphs separated by \\n\\n", '
-    '"meta_title": "<=60 characters", "meta_description": "<=155 characters", '
-    '"applications": "one application per line", '
-    '"safety_info": "2-4 sentences of general handling guidance, always ending by '
+    '{"description": "450-650 words, unique prose, 4-6 paragraphs separated by \\n\\n — '
+    'cover what it is, specs/grade, how it\'s used, why buyers choose this supplier '
+    '(regions/packaging/COA), thorough enough to compete with the longest-form '
+    'competitor product pages, not a short blurb", '
+    '"meta_title": "<=60 characters, include the product name and \'Kenya\' or the '
+    'primary region if it fits", '
+    '"meta_description": "<=155 characters, include a concrete buyer-facing detail '
+    '(purity/packaging/delivery) plus a call to action", '
+    '"applications": "4-8 specific applications, one per line", '
+    '"safety_info": "3-5 sentences of general handling guidance, always ending by '
     'pointing the buyer to the MSDS/COA supplied with their order", '
-    '"faqs": [{"q": "...", "a": "..."}] (4-6 items), '
+    '"faqs": [{"q": "...", "a": "..."}] (5-7 items covering the questions a real buyer '
+    'would search for — pricing/MOQ, purity, packaging options, delivery regions, storage), '
     '"image_alt": "<=140 characters, descriptive"}'
 )
 
 DRAFT_SYSTEM_PROMPT = (
     "You are a technical copywriter for Karivex Solutions Ltd, an industrial "
-    "chemical supplier in East Africa. Draft ORIGINAL, specific, human-quality "
-    "product content from the facts given — never generic manufacturer "
-    "boilerplate, never invented certifications, regulatory codes, or safety "
-    "claims you cannot support from the given facts. For safety_info, restate "
+    "chemical supplier in East Africa, writing to compete with established "
+    "competitors whose product pages run long and detailed. Draft ORIGINAL, "
+    "specific, human-quality, comprehensive product content from the facts "
+    "given — never generic manufacturer boilerplate, never invented "
+    "certifications, regulatory codes, or safety claims you cannot support "
+    "from the given facts. Depth and specificity matter for search ranking, "
+    "but every added sentence must still be grounded in the given facts — "
+    "pad with buyer-relevant framing (use cases, sourcing/delivery, handling "
+    "context), never with invented technical claims. For safety_info, restate "
     "only well-established general handling practice for this class of "
     "chemical, and always close by directing the buyer to the MSDS/COA "
     "supplied with their order — never invent specific hazard codes. "
+    "If a staff-provided target search phrase is given, work it naturally "
+    "into the description and meta fields without keyword-stuffing. "
     "Respond with strict JSON only, no markdown fences."
 )
 
 
-def generate_product_draft(product, image_url: str | None = None, notes: str = "") -> dict:
+def generate_product_draft(
+    product, image_url: str | None = None, notes: str = "", source_text: str | None = None
+) -> dict:
     client = get_client()
 
     facts = [
@@ -95,6 +111,15 @@ def generate_product_draft(product, image_url: str | None = None, notes: str = "
         facts.append(f"Existing description (rewrite/improve, keep it unique — do not copy verbatim): {product.description}")
     if notes:
         facts.append(f"Staff notes: {notes}")
+    if source_text:
+        facts.append(
+            "Reference material fetched from a staff-supplied source page (a "
+            "supplier spec sheet or competitor listing). Use it only to "
+            "ground facts already implied above — extract useful specifics, "
+            "rewrite entirely in your own words, never copy sentences "
+            "verbatim, and never adopt claims that contradict the facts "
+            "given elsewhere: " + source_text
+        )
 
     user_content: list = [
         {"type": "text", "text": "\n".join(facts) + "\n\nRespond with JSON matching this shape: " + DRAFT_SCHEMA_HINT}
@@ -111,7 +136,7 @@ def generate_product_draft(product, image_url: str | None = None, notes: str = "
         ],
         response_format={"type": "json_object"},
         temperature=0.6,
-        max_tokens=1500,
+        max_tokens=2200,  # bumped alongside DRAFT_SCHEMA_HINT's 450-650 word target
     )
     data = json.loads(response.choices[0].message.content)
     return _clean_draft(data)
@@ -121,9 +146,9 @@ def _clean_draft(data: dict) -> dict:
     faqs = [
         {"q": str(f.get("q", ""))[:300], "a": str(f.get("a", ""))[:1000]}
         for f in data.get("faqs", []) if isinstance(f, dict) and f.get("q") and f.get("a")
-    ][:6]
+    ][:7]
     return {
-        "description": str(data.get("description", ""))[:4000],
+        "description": str(data.get("description", ""))[:5000],
         "meta_title": str(data.get("meta_title", ""))[:70],
         "meta_description": str(data.get("meta_description", ""))[:160],
         "applications": str(data.get("applications", ""))[:2000],

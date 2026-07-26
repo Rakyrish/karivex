@@ -10,6 +10,7 @@ from catalog.models import Product
 
 from . import services
 from .serializers import ChatRequestSerializer, ProductDraftRequestSerializer
+from .utils import PageFetchError, fetch_page_text_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,17 @@ class ProductAIDraftView(APIView):
         product: Product = serializer.validated_data["product"]
         image_url = serializer.validated_data.get("image_url") or None
         notes = serializer.validated_data.get("notes", "")
+        source_url = serializer.validated_data.get("source_url") or None
+
+        source_text = None
+        if source_url:
+            try:
+                source_text = fetch_page_text_from_url(source_url)
+            except PageFetchError as exc:
+                return Response({"detail": f"Source URL: {exc}"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            draft = services.generate_product_draft(product, image_url=image_url, notes=notes)
+            draft = services.generate_product_draft(product, image_url=image_url, notes=notes, source_text=source_text)
         except services.AIConfigError:
             return Response({"detail": "AI content generation is not configured (missing OPENAI_API_KEY)."},
                              status=status.HTTP_503_SERVICE_UNAVAILABLE)

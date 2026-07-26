@@ -17,6 +17,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-karivex}
       POSTGRES_USER: ${POSTGRES_USER:-karivex}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+    ports:
+      - "5432:5432"
     volumes:
       - karivex_pgdata:/var/lib/postgresql/data
     networks: [karivex_net]

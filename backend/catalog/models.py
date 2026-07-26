@@ -66,6 +66,10 @@ class Product(models.Model):
     # SEO
     meta_title = models.CharField(max_length=70, blank=True)
     meta_description = models.CharField(max_length=160, blank=True)
+    focus_keyword = models.CharField(max_length=100, blank=True,
+                                     help_text="Primary search phrase this product should rank for, "
+                                               "e.g. 'caustic soda flakes kenya' — drives the on-page SEO "
+                                               "checklist in the admin control center.")
     regions = models.CharField(max_length=200,
                                default="Kenya, Uganda, Tanzania, Rwanda",
                                help_text="Comma-separated, used in title/schema areaServed")

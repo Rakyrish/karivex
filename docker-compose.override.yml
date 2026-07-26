@@ -1,0 +1,11 @@
+# Local-only, untracked override: exposes ports directly to the host so we
+# can hit the Next.js admin dashboard in a browser without going through
+# nginx (whose /admin/ route intentionally proxies to the Django backend
+# admin, not the Next.js /admin control center).
+services:
+  karivex_frontend:
+    ports:
+      - "3000:3000"
+  karivex_backend:
+    ports:
+      - "8000:8000"

@@ -25,7 +25,7 @@ class ProductAdmin(admin.ModelAdmin):
         ("Specifications", {"fields": ["cas_number", "synonyms", "grade", "purity", "appearance", "packaging"]}),
         ("Content (unique per product — no templates)", {"fields": ["description", "applications", "safety_info", "faqs"]}),
         ("Commerce", {"fields": ["is_small_pack", "price_kes", "small_pack_size", "in_stock", "featured"]}),
-        ("SEO", {"fields": ["meta_title", "meta_description", "regions"]}),
+        ("SEO", {"fields": ["meta_title", "meta_description", "focus_keyword", "regions"]}),
         ("AI assist — draft only, review before saving", {"fields": ["ai_draft_preview"]}),
     ]
 
