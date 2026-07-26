@@ -43,3 +43,6 @@ yarn-error.log*
 .idea/
 .vscode/
 .claude/
+
+# Local docker compose overrides (per-host port exposure etc.) — never track
+docker-compose.override.yml
