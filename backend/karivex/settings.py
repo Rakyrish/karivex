@@ -132,6 +132,9 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+# django-cloudinary-storage==0.3.0 predates Django's STORAGES setting and its
+# collectstatic override still reads the legacy attribute directly.
+STATICFILES_STORAGE = STORAGES["staticfiles"]["BACKEND"]
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Nairobi"

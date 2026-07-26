@@ -6,6 +6,12 @@
 #    aliases like `backend`/`frontend`
 # Deploy: docker compose build && docker compose up -d --force-recreate
 # (two steps, never `up --build` during a crash-loop)
+#
+# This server fronts multiple sites behind one shared nginx container
+# (finstar-chemicals-nginx, owns host ports 80/443). This stack does NOT run
+# its own nginx (karivex_nginx below is unused/not started) — instead
+# karivex_backend/karivex_frontend join the shared finstar-network so the
+# central nginx can reach them by container name, same pattern as kykam.
 name: karivex
 
 services:
@@ -32,10 +38,30 @@ services:
     depends_on: [karivex_db]
     volumes:
       - karivex_media:/app/media
-    networks: [karivex_net]
+    networks: [karivex_net, finstar-network]
 
   karivex_frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        SITE_URL: ${SITE_URL}
+        SITE_NAME: ${SITE_NAME}
+        SITE_SHORT_NAME: ${SITE_SHORT_NAME}
+        SITE_TAGLINE: ${SITE_TAGLINE}
+        SITE_LEGAL_NAME: ${SITE_LEGAL_NAME}
+        SITE_PHONE: ${SITE_PHONE}
+        SITE_WHATSAPP: ${SITE_WHATSAPP}
+        SITE_EMAIL: ${SITE_EMAIL}
+        SITE_ADDRESS_STREET: ${SITE_ADDRESS_STREET}
+        SITE_ADDRESS_LOCALITY: ${SITE_ADDRESS_LOCALITY}
+        SITE_ADDRESS_REGION: ${SITE_ADDRESS_REGION}
+        SITE_ADDRESS_POSTAL_CODE: ${SITE_ADDRESS_POSTAL_CODE}
+        SITE_ADDRESS_COUNTRY: ${SITE_ADDRESS_COUNTRY}
+        SITE_REGIONS: ${SITE_REGIONS}
+        SITE_HOURS: ${SITE_HOURS}
+        SITE_DELIVERY_NAIROBI: ${SITE_DELIVERY_NAIROBI}
+        SITE_DELIVERY_REGIONAL: ${SITE_DELIVERY_REGIONAL}
+        SITE_CERTIFICATIONS: ${SITE_CERTIFICATIONS}
     container_name: karivex_frontend
     restart: unless-stopped
     env_file: .env
@@ -43,8 +69,11 @@ services:
       INTERNAL_API_URL: http://karivex_backend:8000
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set in .env}
     depends_on: [karivex_backend]
-    networks: [karivex_net]
+    networks: [karivex_net, finstar-network]
 
+  # karivex_nginx: intentionally not started — the shared finstar-chemicals-nginx
+  # container handles routing for this host (see nginx/karivex.conf for the
+  # location rules it was translated into on the shared nginx side).
   karivex_nginx:
     image: nginx:alpine
     container_name: karivex_nginx
@@ -58,10 +87,14 @@ services:
       # - certbot volumes here once TLS is issued
     depends_on: [karivex_frontend, karivex_backend]
     networks: [karivex_net]
+    profiles: ["standalone-nginx"]
 
 networks:
   karivex_net:
     name: karivex_net
+  finstar-network:
+    external: true
+    name: finstar-industrial-chemicals_finstar-network
 
 volumes:
   karivex_pgdata:
