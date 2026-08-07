@@ -53,8 +53,15 @@ class Migration(migrations.Migration):
                 ('regions', models.CharField(default='Kenya, Uganda, Tanzania, Rwanda', help_text='Comma-separated, used in title/schema areaServed', max_length=200)),
                 ('image', models.ImageField(blank=True, null=True, upload_to='products/')),
                 ('image_alt', models.CharField(blank=True, max_length=160)),
-                ('ai_draft', models.JSONField(blank=True, default=dict)),
-                ('ai_draft_generated_at', models.DateTimeField(blank=True, null=True)),
+                # ai_draft / ai_draft_generated_at are deliberately NOT declared
+                # here — they are added by 0002_product_ai_draft_fields.
+                # They were once hand-added to this already-applied file, which
+                # made every fresh database (including every test run) fail with
+                # "column ai_draft already exists" when 0002 tried to add them a
+                # second time. Removing them here is safe for the deployed
+                # database: 0001 is already recorded as applied and is never
+                # re-run, and the model state after 0001+0002 is identical
+                # either way.
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('category', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='products', to='catalog.category')),

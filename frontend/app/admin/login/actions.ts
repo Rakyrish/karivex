@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { setAdminSession } from "@/lib/admin/session";
 
-const API = process.env.INTERNAL_API_URL ?? "http://karivex_backend:8000";
+const API = process.env.INTERNAL_API_URL ?? "http://karivex-backend:8000";
 
 export type LoginState = { error: string | null };
 

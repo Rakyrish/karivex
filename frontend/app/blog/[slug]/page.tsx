@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { marked } from "marked";
 import { getBlogPost, getBlogPosts, SITE_URL } from "@/lib/api";
 import { site } from "@/lib/site";
+import { ORG_ID, jsonLd } from "@/lib/schema";
 
 export const dynamicParams = true;
 
@@ -46,20 +47,42 @@ export default async function BlogPostPage({ params }: Props) {
 
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: post.title,
+    // BlogPosting, not the generic Article: it is a subtype, so nothing is
+    // lost, and it states what this actually is. `headline` is capped at 110
+    // characters because Google truncates past that and an over-long headline
+    // is a documented Article warning.
+    "@type": "BlogPosting",
+    "@id": `${url}#article`,
+    headline: post.title.slice(0, 110),
     description: post.meta_description || post.excerpt,
     datePublished: post.published_at,
     dateModified: post.updated_at,
-    author: { "@type": "Organization", name: site.name, url: SITE_URL },
-    publisher: { "@type": "Organization", name: site.name, url: SITE_URL },
+    // Both resolve to the sitewide entity by @id rather than restating the
+    // company inline, so a post is attributable to the same Organization node
+    // the rest of the site declares — which is the whole point of having one.
+    author: { "@id": ORG_ID },
+    publisher: { "@id": ORG_ID },
     ...(post.cover_image && { image: post.cover_image }),
+    inLanguage: "en-KE",
+    isPartOf: { "@id": `${SITE_URL}/#website` },
     mainEntityOfPage: url,
+    // The products the post is written about. Without this the editorial
+    // content and the catalogue are two unconnected islands to a crawler.
+    ...(post.related_products?.length
+      ? {
+          about: post.related_products.map((p: { slug: string; name: string }) => ({
+            "@type": "Product",
+            "@id": `${SITE_URL}/products/${p.slug}#product`,
+            name: p.name,
+          })),
+        }
+      : {}),
   };
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    "@id": `${url}#breadcrumb`,
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
       { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE_URL}/blog` },
@@ -69,8 +92,8 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <article className="blog-post">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
 
       <nav aria-label="Breadcrumb" className="crumbs">
         <Link href="/">Home</Link> / <Link href="/blog">Blog</Link> /{" "}

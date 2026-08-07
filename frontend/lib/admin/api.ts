@@ -1,6 +1,6 @@
 import "server-only";
 
-const API = process.env.INTERNAL_API_URL ?? "http://karivex_backend:8000";
+const API = process.env.INTERNAL_API_URL ?? "http://karivex-backend:8000";
 
 export class AdminApiError extends Error {
   status: number;

@@ -76,6 +76,16 @@ a { color: var(--orange-600); }
 .top-bar-contact { display: flex; align-items: center; gap: 1.25rem; }
 .top-bar-contact a { display: inline-flex; align-items: center; gap: .35rem; color: var(--silver-200); text-decoration: none; font-weight: 600; }
 .top-bar-contact a:hover, .top-bar-contact a:focus-visible { color: var(--orange-300); }
+/* The second sales line. Tightened against the first and set slightly back so
+   the pair reads as "one contact, two numbers" rather than two separate
+   contact methods — the icon already belongs to the first. The negative margin
+   claws back the flex gap without changing the shared row rule. */
+.top-bar-contact a.top-bar-phone-alt { margin-left: -.85rem; opacity: .82; font-weight: 500; }
+.top-bar-contact a.top-bar-phone-alt::before { content: "/"; margin-right: .5rem; opacity: .5; }
+/* Below the top bar's own breakpoint the row is already tight; the alternate
+   number is the first thing worth dropping, since /contact and the footer both
+   still carry it. */
+@media (max-width: 48rem) { .top-bar-contact a.top-bar-phone-alt { display: none; } }
 .top-bar-whatsapp { color: var(--teal-400) !important; }
 .top-bar-meta { display: flex; align-items: center; gap: .5rem; color: var(--silver-400); }
 
@@ -207,6 +217,109 @@ a { color: var(--orange-600); }
 .category-chip-all:hover, .category-chip-all:focus-visible { color: var(--paper); filter: brightness(1.15); }
 .category-nav-inline { position: static; padding: 0; margin: 0; overflow-x: auto; }
 
+/* ---------- Mega-menu (industry-first catalogue nav) ---------- */
+.mega-bar {
+  position: sticky; top: 3.9rem; z-index: 40;
+  background: var(--grad-navy); border-bottom: 3px solid var(--orange-500);
+}
+.mega-bar-inner {
+  display: none; align-items: stretch; gap: 1.5rem;
+  max-width: var(--max); margin: 0 auto; padding: 0 1rem;
+}
+.mega-root { position: relative; flex: none; }
+
+.mega-trigger {
+  display: flex; align-items: center; gap: .6rem; height: 100%; cursor: pointer;
+  padding: .85rem 1.4rem; border: none; font: inherit; font-weight: 700; font-size: .92rem;
+  background: var(--grad-orange); color: #1a0e00;
+}
+.mega-trigger-icon { display: grid; gap: 3px; width: 1rem; }
+.mega-trigger-icon span { display: block; height: 2px; background: currentColor; border-radius: 2px; }
+.mega-trigger-caret { transition: transform .18s ease; }
+.mega-trigger.is-open .mega-trigger-caret { transform: rotate(180deg); }
+
+.mega-panel {
+  position: absolute; top: 100%; left: 0; z-index: 50; display: flex;
+  width: min(60rem, calc(100vw - 2rem));
+  background: var(--paper); border: 1px solid var(--rule); border-top: none;
+  border-radius: 0 0 .7rem .7rem; box-shadow: 0 28px 56px -22px rgba(6, 14, 28, .5);
+  overflow: hidden;
+}
+
+.mega-industries {
+  flex: none; width: 19rem; list-style: none; margin: 0; padding: .4rem 0;
+  background: var(--silver-100); border-right: 1px solid var(--rule);
+  max-height: 26rem; overflow-y: auto;
+}
+.mega-industries li > a {
+  display: flex; align-items: center; gap: .5rem; padding: .55rem 1rem;
+  font-size: .87rem; font-weight: 600; color: var(--navy-800); text-decoration: none;
+  border-left: 3px solid transparent;
+}
+.mega-industries li.is-active > a,
+.mega-industries li > a:hover,
+.mega-industries li > a:focus-visible {
+  background: var(--paper); color: var(--orange-700); border-left-color: var(--orange-500);
+  outline: none;
+}
+.mega-industry-name { flex: 1; min-width: 0; }
+.mega-count {
+  flex: none; font-size: .68rem; font-weight: 800; padding: .05rem .4rem; border-radius: 999px;
+  background: var(--silver-200); color: var(--steel-700);
+}
+.mega-industries li.is-active .mega-count { background: var(--orange-100); color: var(--orange-700); }
+.mega-industry-caret { flex: none; opacity: .5; }
+
+.mega-flyout { flex: 1; min-width: 0; padding: 1.4rem 1.6rem; display: flex; flex-direction: column; }
+.mega-flyout-head h3 { margin: 0 0 .3rem; font-size: 1.15rem; color: var(--navy-900); }
+.mega-flyout-head p { margin: 0 0 1.1rem; font-size: .85rem; color: var(--steel-700); max-width: 34rem; }
+.mega-subgrid {
+  list-style: none; margin: 0 0 1.1rem; padding: 0; flex: 1;
+  display: grid; gap: .4rem 1.5rem; grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+.mega-subgrid a {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .4rem .6rem; border-radius: .4rem; font-size: .86rem; font-weight: 600;
+  color: var(--navy-800); text-decoration: none;
+}
+.mega-subgrid a:hover, .mega-subgrid a:focus-visible {
+  background: var(--orange-100); color: var(--orange-700); outline: none;
+}
+.mega-subgrid a span { font-size: .7rem; font-weight: 800; color: var(--silver-500); }
+.mega-empty { margin: 0 0 1rem; font-size: .86rem; color: var(--steel-700); }
+.mega-flyout-cta { font-weight: 700; font-size: .88rem; color: var(--orange-600); text-decoration: none; }
+.mega-flyout-cta:hover { color: var(--orange-700); text-decoration: underline; }
+
+.mega-links { display: flex; align-items: center; gap: 1.4rem; }
+.mega-links a {
+  font-size: .87rem; font-weight: 600; color: var(--silver-300); text-decoration: none;
+  padding: .85rem 0; border-bottom: 2px solid transparent; transition: color .15s ease;
+}
+.mega-links a:hover, .mega-links a:focus-visible {
+  color: var(--paper); border-bottom-color: var(--orange-500);
+}
+
+/* Phone/tablet: scrollable chips instead of the two-pane panel */
+.mega-chips {
+  display: flex; gap: .6rem; align-items: center; padding: .6rem 1rem;
+  overflow-x: auto; scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+}
+.mega-chips::-webkit-scrollbar { height: 4px; }
+.mega-chips::-webkit-scrollbar-thumb { background: rgba(255,255,255,.3); border-radius: 999px; }
+.mega-chips .category-chip {
+  background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); color: var(--silver-200);
+}
+.mega-chips .category-chip:hover, .mega-chips .category-chip:focus-visible {
+  background: var(--orange-100); border-color: var(--orange-300); color: var(--orange-700);
+}
+.mega-chips .category-chip-all { background: var(--grad-orange); color: #1a0e00; border-color: transparent; }
+
+@media (min-width: 64rem) {
+  .mega-bar-inner { display: flex; }
+  .mega-chips { display: none; }
+}
+
 /* ---------- Hero ---------- */
 .hero-band {
   background: var(--grad-navy);
@@ -228,6 +341,299 @@ a { color: var(--orange-600); }
 .hero h1 em { font-style: normal; color: var(--orange-400); }
 .hero p { max-width: 38rem; color: var(--silver-300); font-size: 1.05rem; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: .9rem; margin-top: 1.5rem; }
+
+/* ---------- Hero carousel ---------- */
+.hero-carousel { position: relative; z-index: 1; }
+.hero-carousel-track {
+  position: relative; z-index: 2;
+  display: grid; max-width: var(--max); margin: 0 auto; padding: 4.5rem 1rem 4.5rem;
+}
+
+/* Cross-fading backdrops with a slow pan (Ken Burns) */
+.hero-backdrops { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.hero-backdrop { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; }
+.hero-backdrop.is-active { opacity: 1; }
+.hero-backdrop img {
+  width: 100%; height: 100%; object-fit: cover;
+  transform: scale(1.08); animation: hero-pan 18s ease-out forwards;
+}
+.hero-backdrop.is-active img { animation: hero-pan 18s ease-out forwards; }
+@keyframes hero-pan {
+  from { transform: scale(1.14) translate3d(2%, 1%, 0); }
+  to   { transform: scale(1.02) translate3d(-2%, -1%, 0); }
+}
+/* Keeps headline contrast legible over any photo */
+.hero-backdrops::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(6,14,28,.92) 0%, rgba(6,14,28,.72) 55%, rgba(6,14,28,.45) 100%);
+}
+
+/* Slides stack so height is driven by the tallest — no reflow when rotating. */
+.hero-slide {
+  grid-area: 1 / 1; opacity: 0; visibility: hidden;
+  transition: opacity .45s ease, visibility .45s;
+}
+.hero-slide.is-active { opacity: 1; visibility: visible; }
+/* Only the first slide is the document <h1>; the rest are <h2> so the page
+   has one top-level heading. Both are styled identically — the tag carries
+   document structure, this rule carries the look. */
+.hero-slide h1,
+.hero-slide h2 { max-width: 40rem; font-size: clamp(2rem, 4.4vw, 3.1rem); margin: 0 0 1rem; color: var(--paper); }
+.hero-slide h1 em,
+.hero-slide h2 em { font-style: normal; color: var(--orange-400); }
+.hero-slide p { max-width: 38rem; color: var(--silver-300); font-size: 1.05rem; margin: 0; }
+
+/* Staggered caption entrance — each element rises in just behind the last */
+.hero-slide [data-anim] { opacity: 0; transform: translateY(18px); }
+.hero-slide.is-active [data-anim] { animation: hero-rise .65s cubic-bezier(.2, .7, .3, 1) forwards; }
+.hero-slide.is-active [data-anim="1"] { animation-delay: .10s; }
+.hero-slide.is-active [data-anim="2"] { animation-delay: .22s; }
+.hero-slide.is-active [data-anim="3"] { animation-delay: .34s; }
+.hero-slide.is-active [data-anim="4"] { animation-delay: .46s; }
+@keyframes hero-rise { to { opacity: 1; transform: none; } }
+
+/* Timer bar showing how long until the next slide */
+.hero-progress {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: rgba(255,255,255,.12); z-index: 3;
+}
+.hero-progress span {
+  display: block; height: 100%; width: 0; background: var(--grad-orange);
+  animation: hero-progress 6.5s linear forwards;
+}
+.hero-progress span.is-paused { animation-play-state: paused; }
+@keyframes hero-progress { to { width: 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-backdrop img,
+  .hero-slide.is-active [data-anim],
+  .hero-progress span { animation: none; }
+  .hero-slide [data-anim] { opacity: 1; transform: none; }
+}
+
+.hero-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+  width: 2.6rem; height: 2.6rem; border-radius: 50%; cursor: pointer; display: none;
+  align-items: center; justify-content: center; color: var(--paper);
+  background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.25);
+  transition: background .15s ease, border-color .15s ease;
+}
+.hero-arrow:hover, .hero-arrow:focus-visible { background: var(--grad-orange); color: #1a0e00; border-color: transparent; }
+.hero-arrow-prev { left: 1rem; }
+.hero-arrow-next { right: 1rem; }
+@media (min-width: 60rem) { .hero-arrow { display: flex; } }
+
+.hero-dots {
+  position: absolute; bottom: 1.6rem; left: 50%; transform: translateX(-50%);
+  display: flex; gap: .5rem; z-index: 3;
+}
+.hero-dots button {
+  width: .55rem; height: .55rem; padding: 0; border-radius: 999px; cursor: pointer;
+  border: none; background: rgba(255,255,255,.35); transition: width .2s ease, background .2s ease;
+}
+.hero-dots button.is-active { width: 1.6rem; background: var(--orange-500); }
+
+/* ---------- Category page banner (image-backed) ---------- */
+.category-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  border-radius: .9rem; margin: 0 0 2rem;
+  background: var(--grad-navy); background-image: var(--hex-grid), var(--grad-navy);
+  background-size: 64px 110px, 64px 110px, cover;
+  min-height: 15rem;
+  /* Grid, not flex: with artwork it becomes two tracks on wide screens and
+     stacks on narrow ones. With no artwork the single child fills it. */
+  display: grid; grid-template-columns: minmax(0, 1fr); align-items: end;
+}
+/* Artwork panel — stacked above the copy on phones. */
+.category-hero-media {
+  position: relative; overflow: hidden;
+  aspect-ratio: 16 / 9; max-height: 60vh;
+  background: rgba(6, 14, 28, .45);
+}
+/* next/image with `fill` renders an absolutely-positioned img. The blurred
+   copy fills the panel; the sharp one is contained so the whole picture
+   shows at any ratio. */
+.category-hero-bg {
+  object-fit: cover; z-index: 0;
+  transform: scale(1.15); filter: blur(28px) saturate(1.2) brightness(.55);
+}
+.category-hero-shot {
+  object-fit: contain; z-index: 1; padding: .75rem;
+}
+@media (min-width: 64rem) {
+  .category-hero.has-image {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
+    align-items: stretch;
+  }
+  /* Copy keeps column one and stays bottom-aligned; the panel takes column
+     two at full banner height. */
+  .category-hero.has-image .category-hero-inner { grid-column: 1; grid-row: 1; align-self: end; }
+  .category-hero.has-image .category-hero-media {
+    grid-column: 2; grid-row: 1; aspect-ratio: auto; max-height: none; height: 100%;
+  }
+}
+.category-hero-inner { position: relative; padding: 2.5rem 1.75rem 2rem; width: 100%; }
+.category-hero-inner .crumbs { color: var(--silver-400); margin-bottom: .6rem; }
+.category-hero-inner .crumbs a { color: var(--orange-300); }
+.category-hero-inner h1 {
+  color: var(--paper); margin: 0 0 .6rem; max-width: 44rem;
+  font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+}
+.category-hero-inner .lede { color: var(--silver-300); max-width: 46rem; margin: 0; }
+
+.category-hero-subs { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.1rem; }
+.category-hero-subs a {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .35rem .8rem; border-radius: 999px; text-decoration: none;
+  font-size: .82rem; font-weight: 600; color: var(--paper);
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.category-hero-subs a:hover, .category-hero-subs a:focus-visible {
+  background: var(--grad-orange); color: #1a0e00; border-color: transparent; outline: none;
+}
+.category-hero-subs a span {
+  font-size: .68rem; font-weight: 800; padding: 0 .3rem; border-radius: 999px;
+  background: rgba(0,0,0,.2);
+}
+.category-hero-subs a:hover span { background: rgba(0,0,0,.15); }
+
+@media (max-width: 40rem) {
+  .category-hero-inner { padding: 1.75rem 1.15rem 1.5rem; }
+}
+
+/* ---------- Homepage identity band ----------
+   Sits directly under the hero and states, in visible prose, who the company
+   is. Intentionally plain and text-first: it is read as much by extractors as
+   by people, so nothing here may depend on script or hover to be present. */
+.identity-band {
+  max-width: var(--max);
+  margin: 0 auto 2.75rem;
+  padding: 0 1rem;
+}
+.identity-band h1, .identity-band h2 {
+  margin: 0 0 .75rem;
+  font-size: clamp(1.5rem, 1.15rem + 1.6vw, 2.15rem);
+  line-height: 1.2;
+}
+.identity-band p {
+  margin: 0 0 .75rem;
+  max-width: 62ch;
+  color: var(--steel-700);
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+.identity-band p:last-child { margin-bottom: 0; }
+.identity-band .identity-lede {
+  font-size: 1.12rem;
+  color: var(--ink);
+}
+.identity-band .identity-lede strong { color: var(--navy-900); }
+
+/* ---------- Section heads (shared by the new homepage bands) ---------- */
+.section-head { max-width: var(--max); margin: 0 auto 1.5rem; }
+.section-head h2 { margin: 0 0 .35rem; }
+.section-head p { margin: 0; color: var(--steel-700); }
+.section-more { max-width: var(--max); margin: 1.25rem auto 0; font-weight: 700; }
+
+/* ---------- Shop-by-industry grid ---------- */
+.industry-band { padding: 0 1rem; margin-bottom: 3rem; }
+.industry-grid {
+  list-style: none; margin: 0; padding: 0; max-width: var(--max);
+  display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  margin-inline: auto;
+}
+.industry-grid a {
+  display: flex; flex-direction: column; height: 100%; overflow: hidden;
+  background: var(--paper); border: 1px solid var(--rule); border-radius: .8rem;
+  text-decoration: none; box-shadow: var(--shadow-card);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.industry-grid a:hover, .industry-grid a:focus-visible {
+  transform: translateY(-3px); box-shadow: 0 18px 34px -18px rgba(10,24,48,.45); outline: none;
+}
+
+/* Image band — the tile is image-led, like the reference layout */
+.industry-media {
+  position: relative; display: block; aspect-ratio: 3 / 2; overflow: hidden;
+  background: var(--grad-navy);
+}
+.industry-media img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; display: block;
+}
+/* The label chip needs a fixed-height tile, so the tile stays 3:2 and the
+   artwork is contained inside it — nothing is trimmed off a tall or square
+   upload. Padding keeps it off the card's rounded corners. */
+.industry-media-shot {
+  object-fit: contain; z-index: 1; padding: .5rem;
+}
+.industry-media-fill {
+  object-fit: cover; z-index: 0;
+  transform: scale(1.15); filter: blur(16px) saturate(1.2) brightness(.62);
+  transition: transform .5s ease;
+}
+/* Zoom the backdrop only — scaling the sharp copy would crop it on hover,
+   which is exactly what this treatment exists to avoid. */
+.industry-grid a:hover .industry-media-fill { transform: scale(1.24); }
+/* Gradient wash keeps the label legible and ties photos to the brand */
+/* Sits between the blurred fill and the sharp copy, so it grounds the tile
+   without dimming the artwork itself. */
+.industry-media::after {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(180deg, rgba(6,14,28,0) 35%, rgba(6,14,28,.55) 100%);
+}
+.industry-media-fallback {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading), sans-serif; font-size: 3.4rem; font-weight: 700;
+  color: rgba(255,255,255,.9);
+}
+/* Four tones cycled across the grid so image-less tiles still feel designed */
+.industry-card.tone-0 .industry-media { background: var(--grad-navy); }
+.industry-card.tone-1 .industry-media { background: linear-gradient(135deg, var(--orange-700), var(--orange-500)); }
+.industry-card.tone-2 .industry-media { background: linear-gradient(135deg, #0d6d6a, var(--teal-500)); }
+.industry-card.tone-3 .industry-media { background: linear-gradient(135deg, var(--navy-700), var(--steel-700)); }
+
+.industry-count {
+  position: absolute; z-index: 2; top: .7rem; right: .7rem;
+  font-size: .66rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--grad-orange); color: #1a0e00; padding: .22rem .55rem; border-radius: 999px;
+}
+
+.industry-body { display: flex; flex-direction: column; gap: .5rem; padding: .95rem 1.05rem 1.1rem; flex: 1; }
+.industry-body strong { color: var(--navy-900); font-size: 1rem; line-height: 1.3; }
+.industry-subs { display: flex; flex-wrap: wrap; gap: .3rem; }
+.industry-subs > span {
+  font-size: .71rem; font-weight: 600; color: var(--steel-700);
+  background: var(--silver-100); border: 1px solid var(--rule);
+  padding: .12rem .45rem; border-radius: .3rem;
+}
+.industry-subs .industry-subs-more { background: var(--orange-100); border-color: var(--orange-300); color: var(--orange-700); }
+
+/* ---------- Tabbed per-industry product grids ---------- */
+.industry-tabs { padding: 0 1rem; margin-bottom: 3rem; }
+.industry-tabs-head { max-width: var(--max); margin: 0 auto 1.25rem; }
+.industry-tabs-head h2 { margin: 0 0 .8rem; }
+.industry-tabs-list {
+  display: flex; gap: .5rem; flex-wrap: wrap; border-bottom: 2px solid var(--rule); padding-bottom: .6rem;
+}
+.industry-tabs-list button {
+  display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; font: inherit;
+  font-size: .86rem; font-weight: 700; padding: .5rem .95rem; border-radius: .5rem;
+  background: var(--silver-100); border: 1px solid var(--rule); color: var(--navy-800);
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.industry-tabs-list button:hover { background: var(--orange-100); border-color: var(--orange-300); }
+.industry-tabs-list button.is-active {
+  background: var(--grad-navy); color: var(--paper); border-color: transparent;
+}
+.industry-tabs-list button span {
+  font-size: .68rem; font-weight: 800; padding: .05rem .4rem; border-radius: 999px;
+  background: rgba(0,0,0,.08);
+}
+.industry-tabs-list button.is-active span { background: rgba(255,255,255,.2); }
+.industry-tabs .product-grid { max-width: var(--max); margin-inline: auto; }
+.industry-tabs-more { max-width: var(--max); margin: 1.25rem auto 0; font-weight: 700; }
 
 .cta {
   display: inline-block; background: var(--grad-orange); color: #1a0e00;
@@ -360,6 +766,44 @@ main section h2::after {
 .product-grid p { margin: 0 0 .25rem; color: var(--steel-700); font-size: .92rem; }
 .product-grid p:last-child { margin-top: auto; padding-top: .5rem; font-weight: 700; color: var(--orange-600); }
 
+/* Product cards that carry call/WhatsApp actions. The card border moves from
+   the <a> to the <li>, because the actions are anchors and cannot legally sit
+   inside the card's own anchor — so the <li> becomes the card and the <a>
+   becomes just its clickable body. Scoped to .product-card so blog cards,
+   which share .product-grid, keep the original single-anchor treatment. */
+.product-grid li.product-card {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--rule); border-radius: .75rem;
+  background: var(--paper); box-shadow: var(--shadow-card);
+  border-top: 4px solid var(--orange-500);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.product-grid li.product-card:nth-child(3n+2) { border-top-color: var(--teal-500); }
+.product-grid li.product-card:nth-child(3n+3) { border-top-color: var(--navy-700); }
+.product-grid li.product-card:hover, .product-grid li.product-card:focus-within {
+  transform: translateY(-3px); box-shadow: 0 14px 28px -14px rgba(10, 24, 48, 0.3);
+}
+.product-grid li.product-card > a {
+  border: 0; border-radius: 0; box-shadow: none; background: transparent;
+  height: auto; flex: 1; padding-bottom: .6rem; transform: none;
+}
+.product-grid li.product-card > a:hover, .product-grid li.product-card > a:focus-visible {
+  transform: none; box-shadow: none;
+}
+.product-card-actions { display: flex; gap: .4rem; padding: 0 1.1rem 1rem; }
+.product-card-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  padding: .5rem .4rem; border-radius: .45rem; text-decoration: none;
+  font-size: .78rem; font-weight: 700; line-height: 1;
+}
+.product-card-btn.is-call { background: var(--grad-orange); color: #1a0e00; }
+.product-card-btn.is-whatsapp { background: #25d366; color: #04310f; }
+.product-card-btn:hover, .product-card-btn:focus-visible { filter: brightness(1.06); }
+/* Two-up cards on a narrow phone leave the labels very tight; stack there. */
+@media (max-width: 26rem) {
+  .product-card-actions { flex-direction: column; }
+}
+
 /* ---------- Badges ---------- */
 .badge {
   display: inline-flex; align-items: center; gap: .35rem; font-size: .72rem; font-weight: 700;
@@ -437,6 +881,8 @@ th[scope="row"] { width: 11rem; font-weight: 700; color: var(--navy-800); }
 .footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .55rem; }
 .footer-col-brand p { color: var(--silver-300); line-height: 1.6; }
 .footer-contact li { color: var(--silver-300); }
+/* Role sits after the number, quieter than it, on the same line. */
+.footer-contact-role { margin-left: .45rem; font-size: .8em; opacity: .62; }
 
 .footer-bottom {
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem;
@@ -549,3 +995,588 @@ summary { font-weight: 700; cursor: pointer; color: var(--navy-800); }
 .chat-panel-form button:disabled { filter: grayscale(.5); cursor: not-allowed; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- "How we work" teaser (replaces the long-form homepage blocks) ---------- */
+.hww-teaser {
+  display: grid; gap: 2rem; align-items: center;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  max-width: var(--max); margin: 0 auto 3rem; padding: 2.25rem 1.75rem;
+  background: var(--grad-navy); background-image: var(--hex-grid), var(--grad-navy);
+  background-size: 64px 110px, 64px 110px, cover;
+  border-radius: .9rem; border-left: 4px solid var(--orange-500);
+}
+.hww-teaser h2 { color: var(--paper); margin: 0 0 .6rem; font-size: clamp(1.25rem, 2.4vw, 1.7rem); }
+.hww-teaser p { color: var(--silver-300); margin: 0 0 1.25rem; }
+.hww-teaser ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.hww-teaser li {
+  display: flex; align-items: center; gap: .8rem;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14);
+  border-radius: .5rem; padding: .6rem .85rem;
+}
+.hww-teaser li strong {
+  flex: none; width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--grad-orange); color: #1a0e00; font-size: .8rem; font-weight: 800;
+}
+.hww-teaser li span { color: var(--silver-200); font-size: .87rem; font-weight: 600; }
+@media (max-width: 54rem) {
+  .hww-teaser { grid-template-columns: 1fr; padding: 1.75rem 1.25rem; }
+}
+
+/* ---------- Hero slide counter (replaces dots once the hero is category-driven) ---------- */
+.hero-counter {
+  position: absolute; bottom: 1.4rem; left: 50%; transform: translateX(-50%);
+  z-index: 3; display: flex; align-items: baseline; gap: .45rem;
+  background: rgba(6,14,28,.55); border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px; padding: .35rem 1rem; backdrop-filter: blur(6px);
+  max-width: calc(100% - 8rem);
+}
+.hero-counter strong { color: var(--orange-400); font-size: 1rem; font-weight: 800; }
+.hero-counter span { color: var(--silver-400); font-size: .78rem; }
+.hero-counter em {
+  font-style: normal; color: var(--silver-200); font-size: .8rem; font-weight: 600;
+  padding-left: .5rem; border-left: 1px solid rgba(255,255,255,.2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+@media (max-width: 40rem) { .hero-counter em { display: none; } }
+
+/* Taller, more cinematic hero now that slides carry real photography */
+.hero-carousel-track { min-height: 22rem; align-content: center; }
+@media (min-width: 60rem) { .hero-carousel-track { min-height: 27rem; } }
+
+/* ---------- Hero slideshow: category artwork, shown clean ---------- */
+/* No gradient scrim and no copy on top — the picture is the whole point here.
+   The headline-over-image treatment lives on the category page instead. */
+.hero-shots {
+  position: relative; margin: 0 0 2.5rem; background: var(--navy-950);
+  overflow: hidden;
+}
+/* Ratios stay close to the artwork's own so a `contain`ed image fills as much
+   of the band as it can; the max-height stops a tall upload from pushing the
+   rest of the page off a laptop screen. */
+.hero-shots-stage {
+  position: relative; width: 100%;
+  aspect-ratio: 4 / 3; max-height: 78vh;
+}
+@media (min-width: 48rem) { .hero-shots-stage { aspect-ratio: 16 / 9; max-height: 72vh; } }
+@media (min-width: 80rem) { .hero-shots-stage { aspect-ratio: 2 / 1; max-height: 68vh; } }
+
+.hero-shot {
+  position: absolute; inset: 0; display: block;
+  opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility .7s;
+}
+.hero-shot.is-active { opacity: 1; visibility: visible; }
+/* `contain` is the whole point: no upload is ever cropped, whatever the
+   viewport ratio. The blurred copy underneath means the letterboxed area
+   reads as depth-of-field rather than empty bars. */
+.hero-shot-img { object-fit: contain; z-index: 1; }
+.hero-shot-fill {
+  object-fit: cover; z-index: 0;
+  /* Over-scaled so the blur's soft edges never expose the backdrop. */
+  transform: scale(1.15);
+  filter: blur(30px) saturate(1.2) brightness(.6);
+}
+.hero-shot:focus-visible { outline: 3px solid var(--orange-400); outline-offset: -3px; }
+
+.hero-shots-nav {
+  position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); z-index: 3;
+}
+/* Nav chrome sits on a translucent chip so it stays readable over any photo
+   without darkening the image itself. */
+.hero-shots-nav .hero-dots,
+.hero-shots .hero-counter {
+  position: static; transform: none; margin: 0;
+  background: rgba(6, 14, 28, .55); border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 999px; padding: .4rem .8rem; backdrop-filter: blur(6px);
+}
+.hero-shots-nav .hero-dots { display: flex; gap: .45rem; align-items: center; }
+.hero-shots .hero-arrow { background: rgba(6, 14, 28, .5); backdrop-filter: blur(6px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-shot { transition: none; }
+}
+
+/* Accessible-but-invisible text (slide names, icon-button labels). */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* ---------- Category banner: hero-style staggered entrance ---------- */
+.category-hero { min-height: 20rem; }
+.category-hero-inner .eyebrow { margin-bottom: .5rem; }
+.category-hero-inner .hero-actions { margin-top: 1.25rem; }
+.category-hero-inner [data-anim] {
+  opacity: 0; transform: translateY(18px);
+  animation: hero-rise .65s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+.category-hero-inner [data-anim="1"] { animation-delay: .08s; }
+.category-hero-inner [data-anim="2"] { animation-delay: .18s; }
+.category-hero-inner [data-anim="3"] { animation-delay: .28s; }
+.category-hero-inner [data-anim="4"] { animation-delay: .38s; }
+@media (prefers-reduced-motion: reduce) {
+  .category-hero-inner [data-anim] { animation: none; opacity: 1; transform: none; }
+}
+
+/* ---------- Floating contact rail (left edge) ---------- */
+.contact-rail {
+  /* One knob per breakpoint keeps button, halo and label in step. */
+  --rail-size: 3rem; --rail-halo-size: 3.9rem; --rail-open: 10.5rem;
+  /* Anchored to the bottom-left rather than the vertical centre, so it reads
+     as a screen-corner utility and stays clear of the hero artwork. Mirrors
+     the chat widget in the opposite corner; the safe-area inset keeps it off
+     the home indicator on iOS. */
+  position: fixed; left: 0; top: auto;
+  bottom: calc(2.25rem + env(safe-area-inset-bottom, 0px));
+  z-index: 55; pointer-events: none;
+}
+.contact-rail ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: .8rem;
+}
+/* The li is the positioning context for the halo: the button clips its own
+   overflow to unroll the label, so the pulse cannot live inside it. */
+.contact-rail li { pointer-events: auto; position: relative; }
+
+.contact-rail-btn {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; padding: 0;
+  height: var(--rail-size); width: var(--rail-size);
+  border-radius: 0 999px 999px 0; text-decoration: none; color: #fff;
+  box-shadow: 0 10px 24px -10px rgba(6, 14, 28, .65);
+  overflow: hidden;
+  /* Width is the transition, so the label unrolls out of the circle. */
+  transition: width .28s cubic-bezier(.2, .7, .3, 1), filter .18s ease;
+  animation: rail-in .5s cubic-bezier(.2, .7, .3, 1) backwards;
+  animation-delay: calc(.25s + var(--i) * .12s);
+}
+.contact-rail-btn:hover, .contact-rail-btn:focus-visible {
+  width: var(--rail-open); filter: brightness(1.08); color: #fff; outline: none;
+}
+.contact-rail-btn:focus-visible { box-shadow: 0 0 0 3px var(--orange-300), 0 10px 24px -10px rgba(6,14,28,.65); }
+
+/* Brand-true colours so each mark is recognisable at a glance.
+   --rail-halo drives the pulse behind the button, so it stays channel-true. */
+.contact-rail li.is-call { --rail-halo: 245, 130, 10; }
+.contact-rail li.is-whatsapp { --rail-halo: 37, 211, 102; }
+.contact-rail li.is-email { --rail-halo: 32, 69, 128; }
+.contact-rail-btn.is-call { background: var(--grad-orange); color: #1a0e00; }
+.contact-rail-btn.is-whatsapp { background: linear-gradient(135deg, #1faa54, #25d366); }
+.contact-rail-btn.is-email { background: linear-gradient(135deg, var(--navy-800), var(--navy-600)); }
+
+.contact-rail-icon {
+  flex: none; width: var(--rail-size); height: var(--rail-size);
+  display: flex; align-items: center; justify-content: center;
+}
+.contact-rail-icon svg { width: 1.35rem; height: 1.35rem; }
+.contact-rail-label {
+  white-space: nowrap; font-size: .85rem; font-weight: 700;
+  opacity: 0; transition: opacity .2s ease .06s; padding-right: 1rem;
+}
+.contact-rail-btn:hover .contact-rail-label,
+.contact-rail-btn:focus-visible .contact-rail-label { opacity: 1; }
+
+/* The attention cue, modelled on the reference rail: a translucent disc that
+   breathes behind each button while a ring pushes out of it and fades, and the
+   mark itself gives a short shake. Sizes come from --rail-size so one variable
+   keeps halo, ring and button in step at every breakpoint. */
+.contact-rail li::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: calc(var(--rail-size) / 2); top: 50%;
+  width: var(--rail-halo-size); height: var(--rail-halo-size);
+  margin: calc(var(--rail-halo-size) / -2) 0 0 calc(var(--rail-halo-size) / -2);
+  border-radius: 50%;
+  background: rgba(var(--rail-halo), .28);
+  /* Hidden until the animation starts, so the disc never sits under a button
+     that is still sliding in — fill-mode stays `none` for exactly this. */
+  opacity: 0;
+  animation: rail-halo 2.2s ease-out infinite;
+  /* Staggered so the three read as a sequence rather than one flash. */
+  animation-delay: calc(.7s + var(--i) * .45s);
+}
+.contact-rail li:hover::before,
+.contact-rail li:focus-within::before { animation: none; }
+
+.contact-rail-icon svg {
+  animation: rail-shake 2.2s ease-in-out infinite;
+  animation-delay: calc(.7s + var(--i) * .45s);
+  transform-origin: 50% 50%;
+}
+.contact-rail-btn:hover .contact-rail-icon svg { animation: none; }
+
+@keyframes rail-halo {
+  0%   { opacity: 1; transform: scale(.82); box-shadow: 0 0 0 0 rgba(var(--rail-halo), .45); }
+  60%  { opacity: 1; transform: scale(1);   box-shadow: 0 0 0 .85rem rgba(var(--rail-halo), 0); }
+  100% { opacity: 1; transform: scale(.82); box-shadow: 0 0 0 0 rgba(var(--rail-halo), 0); }
+}
+@keyframes rail-shake {
+  0%, 45%, 100% { transform: rotate(0); }
+  5%  { transform: rotate(-22deg); }
+  15% { transform: rotate(22deg); }
+  25% { transform: rotate(-22deg); }
+  35% { transform: rotate(22deg); }
+}
+@keyframes rail-in {
+  from { transform: translateX(-110%); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+/* Tablets and short viewports: trim the rail so it never crowds the content. */
+@media (max-width: 64rem), (max-height: 40rem) {
+  .contact-rail { --rail-size: 2.85rem; --rail-halo-size: 3.6rem; --rail-open: 10rem; }
+  .contact-rail ul { gap: .7rem; }
+  .contact-rail-icon svg { width: 1.25rem; height: 1.25rem; }
+}
+
+/* Phones: smaller still, and lifted a little further off the bottom edge so
+   the three buttons stay in easy thumb reach. */
+@media (max-width: 40rem) {
+  .contact-rail {
+    --rail-size: 2.6rem; --rail-halo-size: 3.3rem; --rail-open: 9.5rem;
+    bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  }
+  .contact-rail ul { gap: .6rem; }
+  .contact-rail-icon svg { width: 1.15rem; height: 1.15rem; }
+}
+
+/* Touch pointers get no hover, so keep the label out of the way entirely. */
+@media (hover: none) {
+  .contact-rail-btn:hover { width: var(--rail-size); }
+  .contact-rail-btn:hover .contact-rail-label { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-rail-btn { animation: none; }
+  .contact-rail li::before { animation: none; opacity: 0; }
+  .contact-rail-icon svg { animation: none; }
+}
+
+/* Intro prose above the index. Constrained to a readable measure and set
+   slightly quieter than the lede, so it informs without competing with the
+   category links that are the page's actual purpose. */
+.cat-index-intro {
+  max-width: 68ch;
+  margin: 1.25rem 0 0;
+}
+.cat-index-intro p {
+  margin: 0 0 .85rem;
+  color: var(--steel-700);
+  line-height: 1.7;
+}
+.cat-index-intro p:last-child { margin-bottom: 0; }
+.cat-index-intro strong { color: var(--navy-900); }
+
+/* ---------- Category index (/categories hub) ---------- */
+/* Built from existing tokens so the hub reads as part of the same system as
+   the industry cards on the homepage — a text index rather than a tile grid,
+   because its job is to expose all 70 category links compactly. */
+.cat-index {
+  max-width: var(--max);
+  margin: 2rem auto 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 1.75rem 2.25rem;
+}
+.cat-index-group { break-inside: avoid; }
+.cat-index-group h2 {
+  font-size: 1.05rem;
+  margin: 0 0 .4rem;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.cat-index-group h2 a { color: var(--ink); }
+.cat-index-group h2 a:hover, .cat-index-group h2 a:focus-visible { color: var(--orange-700); }
+.cat-index-count {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--silver-500);
+  white-space: nowrap;
+}
+.cat-index-desc {
+  margin: 0 0 .55rem;
+  font-size: .88rem;
+  color: var(--steel-700);
+}
+.cat-index-subs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+.cat-index-subs a {
+  display: inline-block;
+  font-size: .78rem;
+  line-height: 1.3;
+  padding: .22rem .5rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--mist);
+  color: var(--steel-700);
+}
+.cat-index-subs a:hover, .cat-index-subs a:focus-visible {
+  border-color: var(--orange-300);
+  background: var(--orange-100);
+  color: var(--orange-700);
+}
+
+/* ---------- Related products (product detail) ---------- */
+.related-band { margin-top: 2.5rem; }
+.related-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: .6rem;
+}
+.related-list a {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  height: 100%;
+  padding: .7rem .85rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.related-list a:hover, .related-list a:focus-visible {
+  border-color: var(--orange-300);
+  background: var(--orange-100);
+}
+.related-list strong { font-size: .92rem; line-height: 1.3; }
+.related-list span { font-size: .78rem; color: var(--steel-700); }
+.related-more { margin: .9rem 0 0; font-weight: 600; }
+
+/* ---------- Structured product sections ----------
+   Sections render only when the backend pipeline produced them, so every rule
+   here is additive — a product still on the flat description fields is
+   unaffected. Layouts are single-column by default and only widen at a
+   breakpoint, keeping long spec/feature lists readable on a phone, which is
+   where most buyers first land from a search result. */
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .5rem;
+}
+@media (min-width: 40rem) {
+  .feature-list { grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+}
+.feature-list li {
+  position: relative;
+  padding: .55rem .8rem .55rem 1.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+  font-size: .92rem;
+}
+.feature-list li::before {
+  content: "✓";
+  position: absolute;
+  left: .7rem;
+  color: var(--teal-500);
+  font-weight: 700;
+}
+
+.benefit-list { margin: 0; display: grid; gap: .9rem; }
+.benefit-item {
+  border-left: 3px solid var(--orange-500);
+  padding: .2rem 0 .2rem .9rem;
+}
+.benefit-item dt { font-weight: 700; color: var(--navy-800); margin-bottom: .2rem; }
+.benefit-item dd { margin: 0; color: #43535f; }
+
+.industry-item { margin-bottom: 1.1rem; }
+.industry-item h3 { margin: 0 0 .3rem; font-size: 1rem; color: var(--navy-800); }
+.industry-item p { margin: 0; color: #43535f; }
+
+.image-caption { font-size: .85rem; color: var(--steel-700); font-style: italic; }
+
+/* ---------- Site search ---------- */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.site-search { position: relative; flex: 1 1 14rem; max-width: 26rem; }
+.site-search form { display: flex; align-items: stretch; }
+.site-search input {
+  font: inherit; font-size: .9rem; width: 100%;
+  padding: .5rem .75rem; border: 1.5px solid var(--rule);
+  border-right: none; border-radius: .45rem 0 0 .45rem;
+  background: var(--paper); color: var(--ink); min-width: 0;
+}
+.site-search input:focus-visible {
+  outline: none; border-color: var(--orange-500);
+  box-shadow: 0 0 0 3px rgba(245, 130, 10, .18);
+}
+.site-search button {
+  border: 1.5px solid var(--orange-500); background: var(--grad-orange);
+  color: #1a0e00; border-radius: 0 .45rem .45rem 0;
+  padding: 0 .8rem; cursor: pointer; display: flex; align-items: center;
+}
+.site-search-results {
+  position: absolute; z-index: 60; top: calc(100% + .35rem); left: 0; right: 0;
+  list-style: none; margin: 0; padding: .3rem;
+  background: var(--paper); border: 1px solid var(--rule);
+  border-radius: .5rem; box-shadow: var(--shadow-card);
+  max-height: 22rem; overflow-y: auto;
+}
+.site-search-results li a {
+  display: flex; justify-content: space-between; gap: .6rem; align-items: baseline;
+  padding: .5rem .6rem; border-radius: .35rem; color: var(--ink); font-size: .88rem;
+}
+.site-search-results li a:hover,
+.site-search-results li.is-active a { background: var(--orange-100); }
+.site-search-reason { font-size: .75rem; color: var(--steel-700); flex: none; }
+.site-search-empty, .site-search-all {
+  padding: .55rem .6rem; font-size: .82rem; color: var(--steel-700);
+}
+.site-search-all { border-top: 1px solid var(--rule); font-weight: 600; }
+/* The header is tight on small screens; search moves to its own row there. */
+@media (max-width: 60rem) {
+  .site-search-header { order: 3; flex-basis: 100%; max-width: none; margin-top: .5rem; }
+}
+
+.search-results { list-style: none; margin: 1.25rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.search-results a {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem;
+  padding: .75rem .9rem; border: 1px solid var(--rule); border-radius: .4rem;
+  background: var(--paper); color: var(--ink);
+}
+.search-results a:hover { border-color: var(--orange-300); background: var(--orange-100); }
+.search-result-meta { font-size: .82rem; color: var(--steel-700); }
+.search-empty { margin-top: 1.5rem; }
+
+.category-filter { margin: 1.5rem 0 1rem; max-width: 30rem; }
+.category-filter label { display: block; font-weight: 600; font-size: .9rem; margin-bottom: .3rem; }
+.category-filter input {
+  font: inherit; width: 100%; padding: .55rem .75rem;
+  border: 1.5px solid var(--rule); border-radius: .45rem; background: var(--paper);
+}
+.category-filter input:focus-visible {
+  outline: none; border-color: var(--orange-500);
+  box-shadow: 0 0 0 3px rgba(245, 130, 10, .18);
+}
+
+/* ---------- Per-product contact ---------- */
+.product-contact {
+  margin-top: 2.5rem; padding: 1.4rem 1.5rem;
+  border: 1px solid var(--rule); border-radius: .75rem;
+  background: var(--mist); border-top: 4px solid var(--teal-500);
+}
+.product-contact h2 { margin-top: 0; }
+.product-contact-actions {
+  display: flex; flex-wrap: wrap; gap: .6rem; margin: 1rem 0 .75rem;
+}
+.product-contact-btn {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .65rem 1rem; border-radius: .5rem; font-weight: 700; font-size: .9rem;
+  border: 1.5px solid transparent; text-decoration: none;
+}
+.product-contact-btn.is-call { background: var(--grad-orange); color: #1a0e00; }
+.product-contact-btn.is-whatsapp { background: #25d366; color: #04310f; }
+.product-contact-btn.is-email {
+  background: var(--paper); color: var(--navy-800); border-color: var(--rule);
+}
+.product-contact-btn:hover, .product-contact-btn:focus-visible { filter: brightness(1.06); }
+.product-contact-hours { margin: 0; font-size: .82rem; color: var(--steel-700); }
+
+/* ---------- Product page layout ----------
+   The shell is 96rem wide. Every section used to stack down the left of it, so
+   a desktop page was a column of prose against a half-empty viewport while the
+   photo, specs and contact actions sat far below the fold. Two columns from
+   64rem up: copy on the left at a readable measure, the buying panel on the
+   right, sticky so it stays in view. Below 64rem it is one column in source
+   order, which is already the right order for a phone. */
+.product-layout { display: block; }
+@media (min-width: 64rem) {
+  .product-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    gap: 2.5rem;
+    align-items: start;
+  }
+}
+/* Prose stops at a readable measure rather than running the full column —
+   long lines are the other half of the "too much empty space" problem. */
+.product-main > section > p,
+.product-main > section > details > p { max-width: 74ch; }
+.product-main > section { margin-bottom: 1.9rem; }
+.product-main > section:last-child { margin-bottom: 0; }
+
+.product-aside-inner { position: sticky; top: 1.5rem; display: grid; gap: 1.25rem; }
+@media (max-width: 63.99rem) {
+  .product-aside-inner { position: static; }
+}
+.spec-card {
+  border: 1px solid var(--rule); border-radius: .75rem;
+  padding: 1.1rem 1.2rem; background: var(--paper);
+}
+.spec-card h2 { font-size: 1.15rem !important; margin-top: 0; }
+.spec-card table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.spec-card th, .spec-card td { text-align: left; padding: .4rem 0; vertical-align: top; }
+.spec-card th { color: var(--steel-700); font-weight: 600; width: 45%; }
+.spec-card tr + tr th, .spec-card tr + tr td { border-top: 1px solid var(--rule); }
+/* In the rail the contact card is already inside a bordered column, so it
+   drops the top margin that spaced it off the page flow. */
+.product-aside .product-contact { margin-top: 0; }
+
+/* Two-up on wide screens: a single-file list of short entries is what leaves
+   the long empty gutter this page was showing. */
+@media (min-width: 48rem) {
+  .benefit-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .industries-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem; }
+  .industries-grid .industry-item { margin-bottom: 0; }
+}
+
+/* Product photo. Constrained rather than full-bleed: these are drum and sack
+   shots, and blowing them up past their source resolution looks worse than
+   showing them at a sensible size. */
+.product-figure { margin: 0; max-width: 100%; }
+.product-photo {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: .5rem;
+  background: var(--paper);
+}
+.product-figure figcaption {
+  margin-top: .5rem;
+  font-size: .85rem;
+  color: var(--steel-700);
+  font-style: italic;
+}
+.external-refs { font-size: .88rem; color: var(--steel-700); }
+
+.internal-links { margin-top: 2rem; }
+.internal-links ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.internal-links a {
+  display: inline-block;
+  padding: .4rem .75rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--navy-700);
+}
+.internal-links a:hover, .internal-links a:focus-visible {
+  border-color: var(--orange-300);
+  background: var(--orange-100);
+}

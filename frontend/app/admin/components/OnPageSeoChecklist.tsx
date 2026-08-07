@@ -66,7 +66,7 @@ export function computeSeoChecks(input: {
 
   const words = wordCount(input.description);
   checks.push({
-    label: `Description length: ${words} words (competitors run 1000+; aim for 400+)`,
+    label: `Description length: ${words} words (aim for 400+; long-form pages rank better)`,
     status: words >= 400 ? "pass" : words >= 250 ? "warn" : "fail",
   });
 

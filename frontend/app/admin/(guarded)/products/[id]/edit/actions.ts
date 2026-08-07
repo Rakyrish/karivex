@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { getAdminToken, clearAdminSession } from "@/lib/admin/session";
 import { adminMutate, AdminApiError, formatDrfError } from "@/lib/admin/api";
-import type { AIDraft } from "@/lib/admin/types";
+import type { AIDraft, StructuredContent } from "@/lib/admin/types";
 
 export type EditState = { error: string | null; success?: boolean };
 
@@ -37,6 +37,34 @@ export async function regenerateDraftAction(
       body: JSON.stringify({ product: id, notes, source_url: sourceUrl || undefined }),
     });
     return { draft };
+  } catch (e) {
+    if (e instanceof AdminApiError) {
+      if (e.status === 401) { await clearAdminSession(); redirect("/admin/login"); }
+      return { error: formatDrfError(e.body) };
+    }
+    throw e;
+  }
+}
+
+/** Runs the full structured content pipeline.
+ *
+ *  Preview-only by design: the payload comes back for review and is parked on
+ *  `ai_draft`, and nothing reaches the live product until staff press apply.
+ *  A 422 means the validator found blocking issues — the payload is still
+ *  returned so the UI can show exactly what failed. */
+export async function generateStructuredContentAction(
+  id: number, notes: string, sourceUrl?: string,
+): Promise<{ content?: StructuredContent; error?: string }> {
+  const token = await getAdminToken();
+  if (!token) redirect("/admin/login");
+
+  try {
+    const content = await adminMutate<StructuredContent>("/ai/structured-content/", token, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product: id, notes, source_url: sourceUrl || undefined }),
+    });
+    return { content };
   } catch (e) {
     if (e instanceof AdminApiError) {
       if (e.status === 401) { await clearAdminSession(); redirect("/admin/login"); }

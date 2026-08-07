@@ -10,7 +10,9 @@ from .views import (
     LoginView,
     MediaLibraryView,
     MeView,
+    ComposeProductView,
     NewProductDraftView,
+    ResolveImageView,
     SeoAuditView,
     StatsView,
 )
@@ -31,4 +33,6 @@ urlpatterns = [
     # Top-level segment (not nested under products/) so it can never collide
     # with the router's products/<pk>/ detail route.
     path("ai/new-product-draft/", NewProductDraftView.as_view()),
+    path("ai/compose-product/", ComposeProductView.as_view()),
+    path("ai/resolve-image/", ResolveImageView.as_view()),
 ] + router.urls

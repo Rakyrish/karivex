@@ -10,13 +10,20 @@ from django.db.models import Count, Q, Sum
 from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
+from cloudinary.exceptions import Error as CloudinaryError
+
 from ai_tools import services as ai_services
-from ai_tools.utils import PageFetchError, fetch_page_text_from_url
+from ai_tools.utils import (
+    PageFetchError,
+    fetch_page_content_from_url,
+    fetch_page_text_from_url,
+    to_vision_data_uri,
+)
 from catalog.models import BlogPost, Category, Order, Product, QuoteRequest
 
 from .authentication import make_token
@@ -30,10 +37,43 @@ from .serializers import (
     AdminQuoteSerializer,
     LoginSerializer,
     MediaLibraryItemSerializer,
+    ComposeProductRequestSerializer,
     NewProductDraftRequestSerializer,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class MediaStorageUnavailable(APIException):
+    """Media storage (Cloudinary) rejected the upload.
+
+    Worth its own class because the failure is a server misconfiguration, not
+    bad staff input: without it a rejected upload escapes as an unhandled
+    exception, Django returns an HTML 500, and the admin UI can only show a
+    generic "Something went wrong" — hiding the one detail (e.g. "api_secret
+    mismatch") that actually says how to fix it.
+    """
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = (
+        "The image could not be uploaded to Cloudinary, so nothing was saved. "
+        "This is a server configuration problem, not something you did — check "
+        "the CLOUDINARY_* credentials."
+    )
+
+
+def save_with_media_errors(serializer):
+    """serializer.save(), but turn a media-storage rejection into a clear 503.
+
+    The upload happens inside the model INSERT, so a failure here means the
+    row was never written — safe to report as 'nothing was saved'.
+    """
+    try:
+        serializer.save()
+    except CloudinaryError as exc:
+        logger.exception("Cloudinary rejected an upload")
+        raise MediaStorageUnavailable(
+            f"{MediaStorageUnavailable.default_detail} Cloudinary said: {exc}"
+        )
 
 
 class LoginThrottle(AnonRateThrottle):
@@ -143,12 +183,12 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         self._maybe_attach_image_from_url(serializer)
         self._maybe_attach_image_from_library(serializer)
-        serializer.save()
+        save_with_media_errors(serializer)
 
     def perform_update(self, serializer):
         self._maybe_attach_image_from_url(serializer)
         self._maybe_attach_image_from_library(serializer)
-        serializer.save()
+        save_with_media_errors(serializer)
 
 
 class AdminCategoryViewSet(viewsets.ModelViewSet):
@@ -175,6 +215,13 @@ class AdminBlogPostViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAdminUser]
     filterset_fields = ["published"]
     search_fields = ["title", "excerpt", "body"]
+
+    # cover_image lands in the same storage backend as product images.
+    def perform_create(self, serializer):
+        save_with_media_errors(serializer)
+
+    def perform_update(self, serializer):
+        save_with_media_errors(serializer)
 
 
 class AdminQuoteViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
@@ -350,6 +397,128 @@ class MediaLibraryView(APIView):
         return Response(serializer.data)
 
 
+class ResolveImageView(APIView):
+    """Cheap, AI-free lookup so the UI can show the photo the moment a URL is
+    pasted, before committing to the (slow, paid) drafting call. Handles both
+    things staff paste: a direct image URL, or a product page whose photo we
+    pull out of its og:image."""
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        url = str(request.data.get("url") or "").strip()
+        if not url:
+            return Response({"detail": "No URL supplied."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            page = fetch_page_content_from_url(url)
+        except PageFetchError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "image_url": page.image_url,
+            "image_candidates": page.image_candidates,
+            "is_image": page.is_image,
+            "title": page.title,
+        })
+
+
+class ComposeProductView(APIView):
+    """AI product composition from any one of three sources — a URL (product
+    page or direct image), an uploaded photo, or just a name. Returns the
+    extracted facts plus a full content draft. Nothing is saved: the response
+    prefills a review form, and staff still create the product themselves."""
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request):
+        serializer = ComposeProductRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+        url = (d.get("url") or "").strip()
+        upload = d.get("image")
+        name_hint = (d.get("name") or "").strip()
+
+        categories = list(Category.objects.order_by("name"))
+        if not categories:
+            return Response(
+                {"detail": "Create at least one category before adding products."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        category_names = [c.name for c in categories]
+
+        source_text = source_title = ""
+        image_for_vision = None
+        image_url = ""
+        image_candidates: list[str] = []
+
+        if upload is not None:
+            # The upload is only borrowed for vision here; the same file is
+            # re-submitted by the browser on create, so nothing is stored yet.
+            upload.seek(0)
+            image_for_vision = to_vision_data_uri(
+                upload.read(), getattr(upload, "content_type", "") or "image/jpeg"
+            )
+        elif url:
+            try:
+                page = fetch_page_content_from_url(url)
+            except PageFetchError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            source_text, source_title = page.text, page.title
+            image_url, image_candidates = page.image_url, page.image_candidates
+            if image_url:
+                # Fetch and inline the photo rather than handing OpenAI the
+                # URL: it reuses the SSRF-hardened downloader, survives hosts
+                # that block unknown fetchers, and lets us downscale first.
+                try:
+                    fetched = fetch_image_from_url(image_url)
+                    image_for_vision = to_vision_data_uri(
+                        fetched.read(), fetched.content_type or "image/jpeg"
+                    )
+                except ImageFetchError:
+                    logger.info("Could not inline %s for vision; continuing without it", image_url)
+
+        try:
+            result = ai_services.generate_product_from_source(
+                category_names=category_names,
+                source_text=source_text,
+                source_title=source_title,
+                image=image_for_vision,
+                name_hint=name_hint,
+                notes=d.get("notes", ""),
+                regions=", ".join(settings.SITE["regions"]),
+            )
+        except ai_services.AIConfigError:
+            return Response({"detail": "AI content generation is not configured (missing OPENAI_API_KEY)."},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ai_services.AIUnidentifiedError as exc:
+            # Already a complete, staff-facing instruction — pass it straight through.
+            logger.info("Compose-product could not identify a product (url=%r, upload=%s)",
+                        url, upload is not None)
+            return Response({"detail": str(exc)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except ai_services.AIRefusalError as exc:
+            # Retrying verbatim would refuse again, so say so plainly and
+            # point at what staff can actually change.
+            logger.warning("Compose-product refused (url=%r, upload=%s): %s",
+                           url, upload is not None, exc)
+            return Response(
+                {"detail": (
+                    "The AI declined to draft from that source. Try a different "
+                    "page or photo, or enter the product name instead. "
+                    "Reason given: " + str(exc)
+                )},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        except Exception:
+            logger.exception("Compose-product generation failed (url=%r)", url)
+            return Response({"detail": "AI content generation failed. Try again shortly."},
+                            status=status.HTTP_502_BAD_GATEWAY)
+
+        # Map the AI's category *name* back to a real pk; never trust it blindly.
+        by_name = {c.name: c.id for c in categories}
+        result["category_id"] = by_name.get(result.get("category") or "", categories[0].id)
+        result["source_url"] = url
+        result["image_url"] = image_url
+        result["image_candidates"] = image_candidates
+        return Response(result)
+
+
 class NewProductDraftView(APIView):
     """The 'create product with AI' entry point. Distinct from ai_tools'
     ProductAIDraftView, which requires an existing product pk — this one
@@ -400,6 +569,12 @@ class NewProductDraftView(APIView):
         except ai_services.AIConfigError:
             return Response({"detail": "AI content generation is not configured (missing OPENAI_API_KEY)."},
                              status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except ai_services.AIRefusalError as exc:
+            logger.warning("New-product AI draft refused: %s", exc)
+            return Response(
+                {"detail": "The AI declined to draft this product. Reason given: " + str(exc)},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
         except Exception:
             logger.exception("New-product AI draft generation failed")
             return Response({"detail": "AI content generation failed. Try again shortly."},

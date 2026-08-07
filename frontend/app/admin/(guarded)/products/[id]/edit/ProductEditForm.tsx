@@ -1,11 +1,28 @@
 "use client";
 import { useActionState, useState } from "react";
-import type { AdminProduct, Category, AIDraft, MediaLibraryItem } from "@/lib/admin/types";
+import type {
+  AdminProduct, Category, AIDraft, MediaLibraryItem,
+  ContentSections, SeoAssets, StructuredContent,
+} from "@/lib/admin/types";
 import FaqEditor, { type Faq } from "../../../../components/FaqEditor";
 import SerpPreview from "../../../../components/SerpPreview";
 import OnPageSeoChecklist from "../../../../components/OnPageSeoChecklist";
 import MediaLibraryPicker from "../../../../components/MediaLibraryPicker";
-import { updateProductAction, regenerateDraftAction, deleteProductAction, type EditState } from "./actions";
+import StructuredContentEditor from "../../../../components/StructuredContentEditor";
+import ContentQualityPanel from "../../../../components/ContentQualityPanel";
+import KeywordPlanPanel from "../../../../components/KeywordPlanPanel";
+import {
+  updateProductAction, regenerateDraftAction, generateStructuredContentAction,
+  deleteProductAction, type EditState,
+} from "./actions";
+
+const EMPTY_SECTIONS: ContentSections = {
+  summary: "", key_features: [], benefits: [], specifications: [],
+  available_grades: [], packaging_options: [], applications: [], industries: [],
+  typical_uses: [],
+  storage_guidelines: "", handling_safety: { guidance: "", ppe: [] },
+  faqs: [], cta: { headline: "", body: "" },
+};
 
 const GRADES = [
   { value: "industrial", label: "Industrial / Technical" },
@@ -36,6 +53,55 @@ export default function ProductEditForm({ product, categories }: { product: Admi
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState<string | null>(null);
   const [pendingDraft, setPendingDraft] = useState<AIDraft | null>(null);
+
+  // Structured content. Seeded from what's already saved, so opening the form
+  // on a product that has never been through the pipeline shows an empty
+  // editor rather than nothing at all.
+  const [sections, setSections] = useState<ContentSections>(
+    (product.content_sections as ContentSections)?.summary !== undefined
+      ? { ...EMPTY_SECTIONS, ...(product.content_sections as ContentSections) }
+      : EMPTY_SECTIONS,
+  );
+  const [seoAssets, setSeoAssets] = useState<SeoAssets>(product.seo_assets ?? {});
+  const [structuredImageSeo, setStructuredImageSeo] = useState(product.image_seo ?? {});
+  const [internalLinks, setInternalLinks] = useState(product.internal_links ?? []);
+  const [generating, setGenerating] = useState(false);
+  const [structuredError, setStructuredError] = useState<string | null>(null);
+  const [pendingStructured, setPendingStructured] = useState<StructuredContent | null>(null);
+
+  const report = pendingStructured?.report
+    ?? ((product.content_report as StructuredContent["report"])?.metrics ? product.content_report as StructuredContent["report"] : null);
+
+  async function handleGenerateStructured() {
+    setGenerating(true);
+    setStructuredError(null);
+    const result = await generateStructuredContentAction(
+      product.id, regenNotes, regenSourceUrl || undefined,
+    );
+    setGenerating(false);
+    if (result.error) { setStructuredError(result.error); return; }
+    if (result.content) setPendingStructured(result.content);
+  }
+
+  /** Load a generated payload into the editable fields. Still not saved —
+   *  the form's own Save is what persists it. */
+  function applyStructured() {
+    if (!pendingStructured) return;
+    setSections({ ...EMPTY_SECTIONS, ...pendingStructured.sections });
+    setSeoAssets(pendingStructured.seo);
+    setStructuredImageSeo(pendingStructured.image_seo);
+    setInternalLinks(pendingStructured.internal_links);
+    // The flat columns stay in step so the chatbot, SEO audit and any product
+    // still rendering from them don't drift out of sync with the sections.
+    setMetaTitle(pendingStructured.flat.meta_title);
+    setMetaDescription(pendingStructured.flat.meta_description);
+    setDescription(pendingStructured.flat.description);
+    setApplications(pendingStructured.flat.applications);
+    setSafetyInfo(pendingStructured.flat.safety_info);
+    setImageAlt(pendingStructured.flat.image_alt);
+    setFaqs(pendingStructured.flat.faqs);
+    setPendingStructured(null);
+  }
 
   const [imageSource, setImageSource] = useState<"upload" | "url" | "library">("upload");
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -103,9 +169,53 @@ export default function ProductEditForm({ product, categories }: { product: Admi
         </div>
       </div>
 
+      <div className="admin-section">
+        <h2>Structured content &amp; SEO</h2>
+        <p className="field-hint">
+          Runs the full pipeline: image analysis → sections → SEO assets → image SEO →
+          FAQs → internal links → validation. Generated content is a proposal — review it
+          here, then Save to publish. Nothing reaches the live page until you do.
+          {product.content_generated_at
+            ? ` Last generated ${new Date(product.content_generated_at).toLocaleString()}.`
+            : " Never generated for this product."}
+        </p>
+        <div className="admin-form-actions">
+          <button type="button" className="btn-secondary" disabled={generating}
+            onClick={handleGenerateStructured}>
+            {generating ? "Generating…" : "Generate structured content"}
+          </button>
+          {pendingStructured && (
+            <button type="button" className="cta" onClick={applyStructured}>
+              Load into the form below
+            </button>
+          )}
+          {structuredError && <span className="admin-form-error" role="alert">{structuredError}</span>}
+        </div>
+
+        {pendingStructured && !pendingStructured.report.publishable && (
+          <p className="admin-form-error" role="alert">
+            This draft has blocking issues. Load it in, fix them, and the checks below will update.
+          </p>
+        )}
+        {report?.rewritten_sections && report.rewritten_sections.length > 0 && (
+          <p className="field-hint">
+            Automatically rewritten to remove keyword stuffing:{" "}
+            {report.rewritten_sections.join(", ")}.
+          </p>
+        )}
+        {report && <ContentQualityPanel report={report} />}
+        <KeywordPlanPanel seo={seoAssets} metrics={report?.metrics?.keywords} />
+      </div>
+
       <form action={formAction} className="admin-section" encType="multipart/form-data">
         <h2>Product details</h2>
         <input type="hidden" name="faqs" value={JSON.stringify(faqs)} />
+        {/* DRF marks HTML form input as a JSON string and parses it back into
+            the JSONField — the same mechanism the faqs input above relies on. */}
+        <input type="hidden" name="content_sections" value={JSON.stringify(sections.summary ? sections : {})} />
+        <input type="hidden" name="seo_assets" value={JSON.stringify(seoAssets)} />
+        <input type="hidden" name="image_seo" value={JSON.stringify(structuredImageSeo)} />
+        <input type="hidden" name="internal_links" value={JSON.stringify(internalLinks)} />
         {imageSource === "url" && <input type="hidden" name="image_url" value={productImageUrl} />}
         {imageSource === "library" && libraryImage && (
           <input type="hidden" name="library_image_id" value={libraryImage.id} />
@@ -128,9 +238,34 @@ export default function ProductEditForm({ product, categories }: { product: Admi
             <label>CAS number <input name="cas_number" defaultValue={product.cas_number} /></label>
             <label>Synonyms <input name="synonyms" defaultValue={product.synonyms} /></label>
             <label>Purity <input name="purity" defaultValue={product.purity} /></label>
+            <label>Chemical formula <input name="chemical_formula" defaultValue={product.chemical_formula} placeholder="e.g. H2SO4" /></label>
+            <label>Molecular weight <input name="molecular_weight" defaultValue={product.molecular_weight} placeholder="e.g. 98.08 g/mol" /></label>
             <label>Appearance <input name="appearance" defaultValue={product.appearance} /></label>
             <label>Packaging <input name="packaging" defaultValue={product.packaging} /></label>
             <label>Regions <input name="regions" defaultValue={product.regions} /></label>
+            <label>
+              Stock status
+              <select name="stock_status" defaultValue={product.stock_status}>
+                <option value="in_stock">In stock</option>
+                <option value="low_stock">Low stock</option>
+                <option value="on_request">Available on request</option>
+                <option value="out_of_stock">Out of stock</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Transport classification is deliberately separated and never
+              AI-filled: these values print on shipping documents and depend on
+              concentration and packing group. A wrong one is a safety and
+              legal problem, not a content defect. */}
+          <div className="admin-form-section-title">Transport classification — from the SDS only</div>
+          <p className="field-hint">
+            Leave blank unless you have read the value off the safety data sheet. Blank simply
+            omits the row; a guessed UN number or hazard class can misroute a consignment.
+          </p>
+          <div className="admin-form-grid">
+            <label>UN number <input name="un_number" defaultValue={product.un_number} placeholder="e.g. UN1830" /></label>
+            <label>Hazard class <input name="hazard_class" defaultValue={product.hazard_class} placeholder="e.g. Class 8 (Corrosive)" /></label>
           </div>
 
           <label>URL slug <span className="field-hint">(changing this breaks any external links/bookmarks to the old URL)</span>
@@ -169,6 +304,14 @@ export default function ProductEditForm({ product, categories }: { product: Admi
             <span className="admin-form-section-title">FAQs</span>
             <FaqEditor value={faqs} onChange={setFaqs} />
           </div>
+
+          <details className="structured-editor" open={Boolean(sections.summary)}>
+            <summary className="admin-form-section-title">
+              Structured page sections
+              {sections.summary ? "" : " — empty, this product renders from the fields above"}
+            </summary>
+            <StructuredContentEditor value={sections} onChange={setSections} />
+          </details>
 
           <div className="admin-form-section-title">Product photo</div>
           <div className="image-source-toggle">
@@ -217,11 +360,11 @@ export default function ProductEditForm({ product, categories }: { product: Admi
           </div>
           <div className="admin-form-grid">
             <label style={{ flexDirection: "row", alignItems: "center", display: "flex", gap: ".5rem" }}>
-              <input type="checkbox" name="is_small_pack" value="true" defaultChecked={product.is_small_pack} /> Small-pack (Buy Now + M-Pesa)
+              <input type="checkbox" name="is_small_pack" value="true" defaultChecked={product.is_small_pack} /> Small-pack size
             </label>
-            <label style={{ flexDirection: "row", alignItems: "center", display: "flex", gap: ".5rem" }}>
-              <input type="checkbox" name="in_stock" value="true" defaultChecked={product.in_stock} /> In stock
-            </label>
+            {/* The in_stock checkbox was removed: the backend now derives it
+                from Stock status on save, so submitting both let a stale
+                checkbox silently overwrite the richer field. */}
             <label style={{ flexDirection: "row", alignItems: "center", display: "flex", gap: ".5rem" }}>
               <input type="checkbox" name="featured" value="true" defaultChecked={product.featured} /> Featured on homepage
             </label>

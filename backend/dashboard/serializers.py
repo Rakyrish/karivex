@@ -17,12 +17,20 @@ class AdminProductSerializer(serializers.ModelSerializer):
     SEO/slug fields are required=False + allow_blank (not read_only) so blank
     staff input still falls through to Product.save()'s own auto-fill
     guards, while explicit staff input is respected and persisted verbatim.
+
+    Structured content (`content_sections`, `seo_assets`, `image_seo`,
+    `internal_links`) IS writable here — staff editing a generated section is
+    the whole point of the review step. `seo_score` and `content_report` are
+    not: they are computed by ai_tools.validation from the content, so a
+    hand-edited score would just be a stale number that disagrees with the
+    page.
     """
 
     class Meta:
         model = Product
         fields = "__all__"
-        read_only_fields = ["ai_draft", "ai_draft_generated_at", "created_at", "updated_at"]
+        read_only_fields = ["ai_draft", "ai_draft_generated_at", "created_at", "updated_at",
+                            "seo_score", "content_report", "content_generated_at"]
         extra_kwargs = {
             "slug": {"required": False, "allow_blank": True},
             "meta_title": {"required": False, "allow_blank": True},
@@ -45,10 +53,15 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "description", "meta_title", "meta_description", "product_count"]
+        fields = ["id", "name", "slug", "description", "meta_title", "meta_description",
+                  "product_count", "parent", "display_order", "image", "image_alt"]
         extra_kwargs = {
             "slug": {"required": False, "allow_blank": True},
             "meta_title": {"required": False, "allow_blank": True},
+            "parent": {"required": False, "allow_null": True},
+            "display_order": {"required": False},
+            "image": {"required": False, "allow_null": True},
+            "image_alt": {"required": False, "allow_blank": True},
         }
 
 
@@ -86,11 +99,9 @@ class AdminOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "product", "product_name", "quantity", "amount_kes", "customer_name",
-                  "phone", "delivery_address", "mpesa_checkout_id", "mpesa_receipt",
-                  "status", "created_at"]
+                  "phone", "delivery_address", "status", "created_at"]
         read_only_fields = ["id", "product", "product_name", "quantity", "amount_kes",
-                             "customer_name", "phone", "delivery_address",
-                             "mpesa_checkout_id", "mpesa_receipt", "created_at"]
+                             "customer_name", "phone", "delivery_address", "created_at"]
 
 
 class NewProductDraftRequestSerializer(serializers.Serializer):
@@ -109,6 +120,27 @@ class NewProductDraftRequestSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True, max_length=2000)
     image_url = serializers.URLField(required=False, allow_blank=True)
     source_url = serializers.URLField(required=False, allow_blank=True)
+
+
+class ComposeProductRequestSerializer(serializers.Serializer):
+    """The AI compose entry point. Exactly one source is required, and which
+    one staff chose decides how the draft is produced:
+
+      url   — a product page (prose + its photo) OR a direct image URL
+      image — a photo uploaded from the staff member's computer
+      name  — nothing but the product name
+    """
+    url = serializers.URLField(required=False, allow_blank=True)
+    image = serializers.ImageField(required=False)
+    name = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    notes = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+
+    def validate(self, attrs):
+        if not any(str(attrs.get(k) or "").strip() or attrs.get(k) for k in ("url", "image", "name")):
+            raise serializers.ValidationError(
+                "Provide a URL, upload a photo, or enter a product name."
+            )
+        return attrs
 
 
 class MediaLibraryItemSerializer(serializers.ModelSerializer):

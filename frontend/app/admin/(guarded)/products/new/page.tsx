@@ -13,11 +13,13 @@ export default async function NewProductPage() {
 
   return (
     <>
-      <h1>Add a product</h1>
-      <p className="admin-page-lede">
-        Enter the facts, generate a draft with OpenAI, review and edit it, then publish.
-        Nothing is saved until you click Create Product.
-      </p>
+      <div className="new-product-hero">
+        <h1>Add a product</h1>
+        <p className="admin-page-lede">
+          Paste a product URL and AI drafts the whole listing — specs, copy, FAQs and
+          search metadata — for you to review. Nothing is saved until you publish.
+        </p>
+      </div>
       <ProductWizard categories={categories.results} />
     </>
   );

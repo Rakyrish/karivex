@@ -29,9 +29,16 @@ services:
       - karivex_pgdata:/var/lib/postgresql/data
     networks: [karivex_net]
 
-  karivex_backend:
+  karivex-backend:
     build: ./backend
-    container_name: karivex_backend
+    # Hyphen, not underscore: Django's get_host() splits the HTTP Host header
+    # with an RFC-1034/1035 hostname regex that rejects underscores outright
+    # (DisallowedHost) before ALLOWED_HOSTS is even consulted — so any
+    # server-side fetch that bypasses nginx and hits this container by name
+    # directly (frontend's INTERNAL_API_URL calls) 400s no matter what's in
+    # ALLOWED_HOSTS. nginx itself was never affected since it always sends
+    # the real public domain via proxy_set_header Host $host.
+    container_name: karivex-backend
     restart: unless-stopped
     env_file: .env
     environment:
@@ -51,7 +58,12 @@ services:
         SITE_SHORT_NAME: ${SITE_SHORT_NAME}
         SITE_TAGLINE: ${SITE_TAGLINE}
         SITE_LEGAL_NAME: ${SITE_LEGAL_NAME}
+        SITE_BRAND_URL: ${SITE_BRAND_URL}
+        SITE_ALTERNATE_NAMES: ${SITE_ALTERNATE_NAMES}
+        SITE_DESCRIPTION: ${SITE_DESCRIPTION}
+        SITE_SAME_AS: ${SITE_SAME_AS}
         SITE_PHONE: ${SITE_PHONE}
+        SITE_PHONE_ALT: ${SITE_PHONE_ALT}
         SITE_WHATSAPP: ${SITE_WHATSAPP}
         SITE_EMAIL: ${SITE_EMAIL}
         SITE_ADDRESS_STREET: ${SITE_ADDRESS_STREET}
@@ -68,9 +80,15 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      INTERNAL_API_URL: http://karivex_backend:8000
+      INTERNAL_API_URL: http://karivex-backend:8000
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set in .env}
-    depends_on: [karivex_backend]
+      # Docker auto-sets HOSTNAME to the container ID; Next's standalone
+      # server.js does `process.env.HOSTNAME || '0.0.0.0'`, so without this
+      # override it binds to whichever single network that ID happens to
+      # resolve on (order is unstable across recreates) instead of all
+      # interfaces — causing 502s from the other network's nginx.
+      HOSTNAME: "0.0.0.0"
+    depends_on: [karivex-backend]
     networks: [karivex_net, finstar-network]
 
   # karivex_nginx: intentionally not started — the shared finstar-chemicals-nginx
@@ -87,7 +105,7 @@ services:
       - ./nginx/karivex.conf:/etc/nginx/conf.d/default.conf:ro
       - karivex_media:/media:ro
       # - certbot volumes here once TLS is issued
-    depends_on: [karivex_frontend, karivex_backend]
+    depends_on: [karivex_frontend, karivex-backend]
     networks: [karivex_net]
     profiles: ["standalone-nginx"]
 

@@ -3,7 +3,7 @@ import { getAdminToken } from "@/lib/admin/session";
 import Sidebar from "../components/Sidebar";
 import { logoutAction } from "./logout/actions";
 
-const API = process.env.INTERNAL_API_URL ?? "http://karivex_backend:8000";
+const API = process.env.INTERNAL_API_URL ?? "http://karivex-backend:8000";
 
 type Me = { username: string; email: string; is_superuser: boolean };
 type Stats = { quotes: { unhandled: number }; orders: { pending: number } };

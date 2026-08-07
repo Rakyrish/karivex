@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_URL } from "@/lib/api";
-import { site } from "@/lib/site";
+import { site, phones, dialable, formatPhone } from "@/lib/site";
+import { jsonLd } from "@/lib/schema";
 import QuoteForm from "@/components/QuoteForm";
 
 export const metadata: Metadata = {
@@ -33,7 +34,7 @@ const contactPageSchema = {
     "@type": "Organization",
     name: site.name,
     url: SITE_URL,
-    telephone: site.phone,
+    telephone: phones.map((p) => p.number),
     email: site.email,
     address: {
       "@type": "PostalAddress",
@@ -49,8 +50,8 @@ const contactPageSchema = {
 export default function ContactPage() {
   return (
     <section className="contact-page">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(contactPageSchema) }} />
 
       <nav aria-label="Breadcrumb" className="crumbs">
         <Link href="/">Home</Link> / <span aria-current="page">Contact</span>
@@ -66,10 +67,19 @@ export default function ContactPage() {
         <div>
           <h2>Reach us directly</h2>
           <div className="contact-info">
-            <div className="contact-info-card">
-              <h3>Phone</h3>
-              <p><a href={`tel:${site.phone}`}>{site.phone}</a></p>
-            </div>
+            {/* One card per line rather than two numbers crammed into one
+                paragraph: each gets its own tap target, which is what a phone
+                visitor on this page is looking for. The role sits under the
+                number so the two are distinguishable at a glance without
+                claiming they route anywhere different. */}
+            {phones.map((line) => (
+              <div className="contact-info-card" key={line.number}>
+                <h3>{phones.length > 1 ? `Phone — ${line.label}` : "Phone"}</h3>
+                <p>
+                  <a href={`tel:${dialable(line.number)}`}>{formatPhone(line.number)}</a>
+                </p>
+              </div>
+            ))}
             <div className="contact-info-card">
               <h3>WhatsApp</h3>
               <p><a href={`https://wa.me/${site.whatsapp.replace(/[^\d]/g, "")}`}>Message us on WhatsApp</a></p>

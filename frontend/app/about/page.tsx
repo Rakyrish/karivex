@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_URL } from "@/lib/api";
-import { site } from "@/lib/site";
+import { site, decap } from "@/lib/site";
+import { jsonLd } from "@/lib/schema";
 
 export const metadata: Metadata = {
-  title: `About ${site.name} | Industrial Chemical Supplier in Kenya & East Africa`,
-  description: `${site.name} supplies industrial, food-grade, laboratory, pharmaceutical and cosmetic-grade chemicals from ${site.address.locality}, delivered across ${site.regions.join(", ")} with ${site.certifications.toLowerCase()}.`,
+  title: `About ${site.name} | Chemical Supplier Kenya`,
+  description: `${site.name} supplies industrial, food-grade and laboratory chemicals from ${site.address.locality} across East Africa, with ${decap(site.certifications)}.`,
   alternates: { canonical: `${SITE_URL}/about` },
   openGraph: {
     title: `About ${site.name}`,
@@ -27,7 +28,7 @@ const breadcrumbSchema = {
 export default function AboutPage() {
   return (
     <section className="about-page">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbSchema) }} />
 
       <nav aria-label="Breadcrumb" className="crumbs">
         <Link href="/">Home</Link> / <span aria-current="page">About</span>
@@ -51,7 +52,8 @@ export default function AboutPage() {
             products.
           </p>
           <p className="about-card-links">
-            <Link href="/products">Browse the full catalogue</Link> or{" "}
+            <Link href="/products">Browse the full catalogue</Link>,{" "}
+            <Link href="/how-we-work">see how we work</Link>, or{" "}
             <Link href="/quote">request a quote</Link> for a specification we haven&rsquo;t listed yet.
           </p>
         </section>
@@ -61,7 +63,7 @@ export default function AboutPage() {
           <p>
             Bulk and small-pack orders both move through the same {site.address.locality} warehouse and the
             same quote process, answered within one business hour, {site.hours}. {site.deliveryNairobi},{" "}
-            {site.deliveryRegional.toLowerCase()} — the same lead times whether the order is a single drum or
+            {decap(site.deliveryRegional)} — the same lead times whether the order is a single drum or
             a full truckload.
           </p>
         </section>

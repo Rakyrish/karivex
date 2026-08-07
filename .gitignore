@@ -29,6 +29,9 @@ ENV/
 .env*.local
 !.env.example
 
+# Local backups (env snapshots, DB dumps) — never track
+backups/
+
 # Logs & temp files
 *.log
 npm-debug.log*

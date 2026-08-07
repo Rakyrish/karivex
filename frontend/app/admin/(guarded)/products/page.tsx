@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getAdminToken } from "@/lib/admin/session";
 import { adminGet } from "@/lib/admin/api";
 import type { AdminProductListItem, Paginated } from "@/lib/admin/types";
+import BulkGeneratePanel from "./BulkGeneratePanel";
 
 export const metadata = { title: "Products — Karivex Control Center" };
 
@@ -26,6 +27,8 @@ export default async function AdminProductsPage({
     <>
       <h1>Products</h1>
       <p className="admin-page-lede">{data.count} product{data.count === 1 ? "" : "s"} in the catalog.</p>
+
+      <BulkGeneratePanel />
 
       <div className="admin-section">
         <div className="admin-toolbar">

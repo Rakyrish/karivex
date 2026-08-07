@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { stockedCategories } from "@/lib/categories";
+import { phones, dialable, formatPhone } from "@/lib/site";
 
-type CategoryItem = { name: string; slug: string };
+// Carries total_product_count because the footer now filters on it. The layout
+// already passes full category objects; the narrower type was hiding the field
+// this component needed.
+type CategoryItem = { name: string; slug: string; total_product_count?: number };
 
 type Props = {
   site: {
@@ -38,12 +43,19 @@ export default function Footer({ site, categories }: Props) {
           <div className="footer-col">
             <h3>Product categories</h3>
             <ul>
-              {categories.slice(0, 8).map((c) => (
+              {/* Filter BEFORE the slice, not after: slicing first spends the
+                  eight footer slots on whatever happens to sort first,
+                  including empty categories, and this block appears on all 220
+                  pages. Eight live categories are worth eight sitewide links;
+                  an empty one is a dead end that earns none. */}
+              {stockedCategories(categories).slice(0, 8).map((c) => (
                 <li key={c.slug}>
                   <Link href={`/categories/${c.slug}`}>{c.name}</Link>
                 </li>
               ))}
-              {categories.length === 0 && <li><Link href="/products">Browse all products</Link></li>}
+              {stockedCategories(categories).length === 0 && (
+                <li><Link href="/products">Browse all products</Link></li>
+              )}
             </ul>
           </div>
 
@@ -62,7 +74,15 @@ export default function Footer({ site, categories }: Props) {
           <div className="footer-col">
             <h3>Contact</h3>
             <ul className="footer-contact">
-              <li><a href={`tel:${site.phone}`}>{site.phone}</a></li>
+              {/* Both lines, each with its role. The footer is a lookup
+                  surface — someone reading it is deciding who to call — so a
+                  second number helps here in a way it would not on a CTA. */}
+              {phones.map((line) => (
+                <li key={line.number}>
+                  <a href={`tel:${dialable(line.number)}`}>{formatPhone(line.number)}</a>
+                  <span className="footer-contact-role">{line.label}</span>
+                </li>
+              ))}
               <li><a href={`https://wa.me/${site.whatsapp.replace(/[^\d]/g, "")}`}>WhatsApp us</a></li>
               <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
               <li>{site.address.street}, {site.address.locality}</li>

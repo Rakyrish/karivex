@@ -117,7 +117,79 @@ SITE = {
     "delivery_nairobi": os.environ.get("SITE_DELIVERY_NAIROBI", "24-hour delivery in Nairobi"),
     "delivery_regional": os.environ.get("SITE_DELIVERY_REGIONAL", "2-3 day delivery to Uganda, Tanzania & Rwanda"),
     "certifications": os.environ.get("SITE_CERTIFICATIONS", "COA & MSDS with every order"),
+    # --- E-E-A-T signals. Every one of these is BLANK by default and is only
+    # rendered when set, because these are exactly the claims that are damaging
+    # to fabricate: a certification the business does not hold, or a founding
+    # year that contradicts the company register. Fill them in .env only with
+    # what can be evidenced.
+    "founded_year": os.environ.get("SITE_FOUNDED_YEAR", "").strip(),
+    "quality_statement": os.environ.get("SITE_QUALITY_STATEMENT", "").strip(),
+    "compliance": os.environ.get("SITE_COMPLIANCE", "").strip(),
+    "industries_served": [
+        i.strip() for i in os.environ.get("SITE_INDUSTRIES_SERVED", "").split(",") if i.strip()
+    ],
 }
+
+# Cities the business actually delivers to, as "City:Country" pairs.
+#
+# Drives geographic keyword generation in ai_tools/keywords.py. It is config
+# rather than a constant for one reason: a city named here becomes a phrase the
+# content is optimised for, and optimising for a town nobody ships to is how a
+# supplier site drifts into doorway-page territory. Removing a row here removes
+# it from every page's keyword strategy on the next generation.
+#
+# Cities whose country is not in SITE["regions"] are ignored at runtime, so
+# pruning the regions list is enough to retire a whole market.
+SITE_DELIVERY_CITIES = [
+    tuple(part.split(":", 1))
+    for part in os.environ.get(
+        "SITE_DELIVERY_CITIES",
+        "Nairobi:Kenya,Mombasa:Kenya,Kisumu:Kenya,Eldoret:Kenya,Nakuru:Kenya,"
+        "Thika:Kenya,Kampala:Uganda,Dar es Salaam:Tanzania,Kigali:Rwanda",
+    ).split(",")
+    if ":" in part
+]
+
+# Without an explicit config, Django only wires up the `django` logger — app
+# loggers like catalog.emails fall through to logging's last-resort handler,
+# which emits WARNING and above and drops INFO entirely. That made a successful
+# quote notification indistinguishable from one that never ran. Everything to
+# stdout, where `docker compose logs` picks it up.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"simple": {"format": "%(asctime)s %(levelname)s %(name)s: %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "simple"}},
+    "root": {"handlers": ["console"], "level": os.environ.get("LOG_LEVEL", "INFO")},
+}
+
+# Resend — transactional email for quote requests. Blank key disables sending
+# (logged as a warning, never an exception), same degrade-gracefully contract
+# as the OpenAI and Cloudinary blocks below.
+#
+# QUOTE_FROM_EMAIL must be on a domain verified in Resend. The DKIM key is
+# published at resend._domainkey.karivexsolutionsltd.com — i.e. the ROOT domain
+# is the verified one, with send.karivexsolutionsltd.com only as the custom
+# MAIL FROM — so an address at the apex is correct here.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+# `or` rather than a get() default throughout: docker-compose's env_file passes
+# every declared key through even when it is blank, so an unfilled
+# `QUOTE_NOTIFY_TO=` in .env arrives as "" and would silently beat a get()
+# default — which is exactly how the first version of this shipped with an
+# empty recipient list.
+QUOTE_FROM_EMAIL = os.environ.get("QUOTE_FROM_EMAIL", "").strip() or (
+    f"{os.environ.get('SITE_NAME') or 'Karivex Solutions Ltd'} <quotes@karivexsolutionsltd.com>"
+)
+# Where new quote requests land. Comma-separated; falls back to SITE_EMAIL so
+# the notification always has somewhere to go even if this is never configured.
+QUOTE_NOTIFY_TO = [
+    e.strip() for e in (
+        os.environ.get("QUOTE_NOTIFY_TO", "").strip()
+        or os.environ.get("SITE_EMAIL", "").strip()
+        or "info@karivexsolutionsltd.com"
+    ).split(",") if e.strip()
+]
+QUOTE_SEND_CUSTOMER_ACK = os.environ.get("QUOTE_SEND_CUSTOMER_ACK", "true").lower() == "true"
 
 # OpenAI — used for staff-side content drafting and the public FAQ chatbot.
 # Blank key means AI features are disabled; ai_tools.services raises a clear
